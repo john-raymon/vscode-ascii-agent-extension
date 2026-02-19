@@ -176,7 +176,7 @@ export function createLmClient(): LmClient {
         return fullText;
       } catch (err) {
         if (err instanceof vscode.LanguageModelError) {
-          return handleLanguageModelError(err, attempt);
+          return await handleLanguageModelError(err, attempt);
         }
 
         // Unknown/network error — retry once after a delay.
@@ -203,7 +203,7 @@ export function createLmClient(): LmClient {
    * @param attempt - Current attempt index (0-based).
    * @returns Never returns normally — always throws.
    */
-  function handleLanguageModelError(err: vscode.LanguageModelError, attempt: number): never {
+  async function handleLanguageModelError(err: vscode.LanguageModelError, attempt: number): Promise<never> {
     const msg = err.message.toLowerCase();
 
     // Quota exceeded — enter cooldown, do not retry.
@@ -226,9 +226,10 @@ export function createLmClient(): LmClient {
       throw err; // Do not retry.
     }
 
-    // Generic LM error — retry once.
+    // Generic LM error — retry once with delay.
     if (attempt === 0) {
-      log.warn(`LM error (attempt ${attempt + 1}): ${String(err)}. Retrying...`);
+      log.warn(`LM error (attempt ${attempt + 1}): ${String(err)}. Retrying in ${RETRY_DELAY_MS / 1000}s...`);
+      await sleep(RETRY_DELAY_MS);
       // Caller's loop will retry; throw to break out of sendRequest and trigger the retry.
       throw err;
     }
