@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "compile-ascii-agent",
+      "type": "shell",
+      "command": "node esbuild.mjs",
+      "options": {
+        "cwd": "${workspaceFolder}/tools/vscode-ascii-agent"
+      },
+      "group": "build",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "watch-ascii-agent",
+      "type": "shell",
+      "command": "node esbuild.mjs --watch",
+      "options": {
+        "cwd": "${workspaceFolder}/tools/vscode-ascii-agent"
+      },
+      "isBackground": true,
+      "group": "build",
+      "problemMatcher": ["$esbuild-watch"]
+    }
+  ]
+}

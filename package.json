@@ -1,0 +1,49 @@
+{
+  "name": "vscode-ascii-agent",
+  "displayName": "ASCII Agent",
+  "description": "Silently maintains ASCII file-tree and architecture diagrams for your workspace.",
+  "version": "0.0.1",
+  "publisher": "word-for-word",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/.asciirc.json",
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "asciiAgent.initialize",
+        "title": "ASCII Agent: Initialize"
+      },
+      {
+        "command": "asciiAgent.generateNow",
+        "title": "ASCII Agent: Generate Now"
+      },
+      {
+        "command": "asciiAgent.toggleAutoWatch",
+        "title": "ASCII Agent: Toggle Auto-Watch"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "node esbuild.mjs --production",
+    "compile": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "lint": "eslint src/",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.93.0",
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.5.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.0"
+  }
+}

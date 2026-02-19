@@ -1,0 +1,9 @@
+.vscode/**
+src/**
+test/**
+node_modules/**
+tsconfig.json
+esbuild.mjs
+*.map
+.ascii_history/**
+PRD.md

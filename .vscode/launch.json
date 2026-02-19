@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run ASCII Agent Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/tools/vscode-ascii-agent"],
+      "outFiles": ["${workspaceFolder}/tools/vscode-ascii-agent/out/**/*.js"],
+      "preLaunchTask": "compile-ascii-agent"
+    }
+  ]
+}
