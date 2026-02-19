@@ -41,7 +41,7 @@ function makeConfig(overrides: Partial<AsciiAgentConfig> = {}): AsciiAgentConfig
  */
 function mockReadDirectory(fsMap: Map<string, [string, vscode.FileType][]>): () => void {
   const original = vscode.workspace.fs.readDirectory.bind(vscode.workspace.fs);
-  // @ts-expect-error — intentional mock
+  // Intentional mock for testing
   vscode.workspace.fs.readDirectory = async (uri: vscode.Uri) => {
     const entries = fsMap.get(uri.fsPath);
     if (!entries) {
@@ -50,7 +50,7 @@ function mockReadDirectory(fsMap: Map<string, [string, vscode.FileType][]>): () 
     return entries;
   };
   return () => {
-    // @ts-expect-error — restoring original
+    // Restore original for cleanup
     vscode.workspace.fs.readDirectory = original;
   };
 }

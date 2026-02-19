@@ -23,7 +23,7 @@ import { loadConfig, getDefaultConfig } from "../../src/config";
  */
 function mockReadFile(targetPath: string, content: string | Error): () => void {
   const original = vscode.workspace.fs.readFile.bind(vscode.workspace.fs);
-  // @ts-expect-error — intentional mock
+  // Intentional mock for testing
   vscode.workspace.fs.readFile = async (uri: vscode.Uri): Promise<Uint8Array> => {
     if (uri.fsPath === targetPath) {
       if (content instanceof Error) {
@@ -34,7 +34,7 @@ function mockReadFile(targetPath: string, content: string | Error): () => void {
     return original(uri);
   };
   return () => {
-    // @ts-expect-error — restoring original
+    // Restore original for cleanup
     vscode.workspace.fs.readFile = original;
   };
 }
