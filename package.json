@@ -35,6 +35,10 @@
       {
         "command": "asciiAgent.toggleAutoWatch",
         "title": "ASCII Agent: Toggle Auto-Watch"
+      },
+      {
+        "command": "asciiAgent.showTokenUsage",
+        "title": "ASCII Agent: Show Token Usage"
       }
     ]
   },

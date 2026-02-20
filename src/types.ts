@@ -108,6 +108,36 @@ export interface GenerationResult {
 }
 
 // ---------------------------------------------------------------------------
+// Token Usage
+// ---------------------------------------------------------------------------
+
+/**
+ * Cumulative token usage totals (estimated via character-count heuristics where
+ * the VS Code LM API does not expose exact counts).
+ */
+export interface TokenUsageTotals {
+  /** Estimated number of input (prompt) tokens consumed. */
+  inputTokensEstimate: number;
+  /** Estimated number of output (completion) tokens produced. */
+  outputTokensEstimate: number;
+  /** Total number of LM requests that contributed to these totals. */
+  requestCount: number;
+}
+
+/**
+ * Result returned by `generateArchitectureDiagram`, including the wrapped
+ * markdown diagram and token-usage estimates for this request.
+ */
+export interface ArchitectureGenerationResult {
+  /** The markdown-wrapped ASCII diagram string, ready to write to disk. */
+  diagram: string;
+  /** Estimated input token count for this request (prompt char length ÷ 4). */
+  inputTokensEstimate: number;
+  /** Estimated output token count for this request (response char length ÷ 4). */
+  outputTokensEstimate: number;
+}
+
+// ---------------------------------------------------------------------------
 // LM Client
 // ---------------------------------------------------------------------------
 

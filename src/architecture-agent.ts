@@ -13,7 +13,7 @@
  */
 
 import * as vscode from "vscode";
-import type { AsciiAgentConfig, LmClient } from "./types";
+import type { AsciiAgentConfig, LmClient, ArchitectureGenerationResult } from "./types";
 import { matchesAnyPattern } from "./utils";
 import { log } from "./logger";
 
@@ -78,14 +78,14 @@ Generate the updated architecture diagram now.`;
  * @param workspaceRoot - Absolute URI of the workspace root.
  * @param lmClient      - Initialized `LmClient` instance to use for the LM call.
  * @param token         - Optional external cancellation token (e.g. from progress dialog).
- * @returns The cleaned ASCII diagram string (ready to write to disk).
+ * @returns An `ArchitectureGenerationResult` containing the diagram and token-usage estimates.
  */
 export async function generateArchitectureDiagram(
   config: AsciiAgentConfig,
   workspaceRoot: vscode.Uri,
   lmClient: LmClient,
   token?: vscode.CancellationToken,
-): Promise<string> {
+): Promise<ArchitectureGenerationResult> {
   // 1. Select the model to determine token budget.
   const models = await vscode.lm.selectChatModels({ vendor: "copilot" });
   const model = models[0];
@@ -126,7 +126,13 @@ export async function generateArchitectureDiagram(
 
   // 9. Wrap in a markdown code block so the .md file renders correctly in
   //    VS Code preview, GitHub, and is well-understood by AI agents.
-  return `# Architecture Diagram\n\n\`\`\`\n${cleaned.trimEnd()}\n\`\`\`\n`;
+  const diagram = `# Architecture Diagram\n\n\`\`\`\n${cleaned.trimEnd()}\n\`\`\`\n`;
+
+  return {
+    diagram,
+    inputTokensEstimate: Math.ceil(promptText.length / 4),
+    outputTokensEstimate: Math.ceil(rawResponse.length / 4),
+  };
 }
 
 // ---------------------------------------------------------------------------

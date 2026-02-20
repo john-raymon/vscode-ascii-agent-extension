@@ -13,7 +13,8 @@
 import * as vscode from "vscode";
 import { loadConfig, watchConfigFile } from "./config";
 import { initLogger, log } from "./logger";
-import type { AsciiAgentConfig } from "./types";
+import { resetSessionTokens, recordTokenUsage, getSessionTokenUsage, getLifetimeTokenUsage } from "./token-tracker";
+import type { AsciiAgentConfig, ArchitectureGenerationResult } from "./types";
 import { WatcherState } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -31,6 +32,12 @@ let statusBarItem: vscode.StatusBarItem;
 
 /** Disposable for the currently running watcher session (set in Phase 6). */
 let watcherSessionDisposable: vscode.Disposable | undefined;
+
+/**
+ * Extension context stored at activation time.
+ * Used for token usage tracking (globalState) and welcome-prompt state.
+ */
+let extensionContext: vscode.ExtensionContext;
 
 // ---------------------------------------------------------------------------
 // Workspace root helpers
@@ -74,6 +81,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const channel = vscode.window.createOutputChannel("ASCII Agent");
   context.subscriptions.push(channel);
   initLogger(channel);
+
+  // Store context for token tracking and first-install detection.
+  extensionContext = context;
+  await resetSessionTokens(context);
 
   // --- Guard: require at least one workspace folder (PRD §7.2) ---
   if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
@@ -129,6 +140,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       const root = resolveWorkspaceRoot();
       return root ? commandToggleAutoWatch(context, root) : warnNoWorkspace();
     }),
+    vscode.commands.registerCommand("asciiAgent.showTokenUsage", () => commandShowTokenUsage(context)),
   );
 
   // --- Auto-start watcher if configured ---
@@ -139,6 +151,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // --- Activation success message (fades after 3 seconds) ---
   const msg = vscode.window.setStatusBarMessage("ASCII Agent: active", 3000);
   context.subscriptions.push(msg);
+
+  // --- First-install welcome prompt ---
+  await maybeShowWelcomePrompt(context, workspaceRoot);
 
   log.info("Activated successfully.");
 }
@@ -203,8 +218,18 @@ async function commandInitialize(workspaceRoot: vscode.Uri): Promise<void> {
   // 4. Generate and write file tree.
   await safeGenerateAndWriteFileTree(workspaceRoot, generateFileTree);
 
-  // 5. Generate and write architecture diagram.
-  const archGenerated = await safeGenerateArchitecture(workspaceRoot);
+  // 5. Generate and write architecture diagram (with progress notification).
+  let archGenerated = false;
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: "ASCII Agent",
+      cancellable: true,
+    },
+    async (progress, archToken) => {
+      archGenerated = await safeGenerateArchitecture(workspaceRoot, progress, archToken);
+    },
+  );
   if (!archGenerated) {
     vscode.window.showWarningMessage(
       'ASCII Agent: File tree created. Architecture diagram skipped — Copilot not available yet. Run "ASCII Agent: Generate Now" once Copilot is ready.',
@@ -284,7 +309,7 @@ async function commandGenerateNow(workspaceRoot: vscode.Uri): Promise<void> {
           }
 
           const archStart = Date.now();
-          const archContent = await generateArchitectureDiagram(currentConfig, workspaceRoot, lmClient, token);
+          const archResult = await generateArchitectureDiagram(currentConfig, workspaceRoot, lmClient, token);
 
           if (token.isCancellationRequested) {
             return;
@@ -292,10 +317,11 @@ async function commandGenerateNow(workspaceRoot: vscode.Uri): Promise<void> {
 
           // Snapshot before overwriting (PRD §5.7).
           const { saveSnapshot } = await import("./history");
-          await saveSnapshot(workspaceRoot, archContent);
+          await saveSnapshot(workspaceRoot, archResult.diagram);
           await pruneHistory(workspaceRoot);
 
-          await writeOutputFile(workspaceRoot, currentConfig.outputPaths.architecture, archContent);
+          await writeOutputFile(workspaceRoot, currentConfig.outputPaths.architecture, archResult.diagram);
+          await recordTokenUsage(extensionContext, archResult.inputTokensEstimate, archResult.outputTokensEstimate);
           log.info(`Architecture diagram generated in ${Date.now() - archStart}ms.`);
           vscode.window.showInformationMessage("ASCII Agent: Diagrams updated.");
         } finally {
@@ -331,6 +357,65 @@ function commandToggleAutoWatch(context: vscode.ExtensionContext, workspaceRoot:
     vscode.window.showInformationMessage("ASCII Agent: Auto-watch is now ON.");
     log.info("Auto-watch started by user.");
   }
+}
+
+// ---------------------------------------------------------------------------
+// Command: Show Token Usage
+// ---------------------------------------------------------------------------
+
+/**
+ * Command handler for `asciiAgent.showTokenUsage`.
+ *
+ * Displays a read-only Quick Pick panel summarising current session and lifetime
+ * token usage estimates. Section headings use `QuickPickItemKind.Separator` so they
+ * render as non-selectable dividers. The panel closes on any item selection or
+ * on focus loss.
+ *
+ * Estimates are derived via a ~4 chars/token heuristic; they are for rough cost
+ * awareness only, not billing accuracy.
+ *
+ * @param context - Extension context providing `globalState` for token tallies.
+ */
+function commandShowTokenUsage(context: vscode.ExtensionContext): void {
+  const session = getSessionTokenUsage(context);
+  const lifetime = getLifetimeTokenUsage(context);
+
+  /** Format a number with locale-aware thousands separators. */
+  const fmt = (n: number): string => n.toLocaleString();
+
+  const sessionTotal = session.inputTokensEstimate + session.outputTokensEstimate;
+  const lifetimeTotal = lifetime.inputTokensEstimate + lifetime.outputTokensEstimate;
+  const sessionReqLabel = session.requestCount === 1 ? "1 request" : `${fmt(session.requestCount)} requests`;
+  const lifetimeReqLabel = lifetime.requestCount === 1 ? "1 request" : `${fmt(lifetime.requestCount)} requests`;
+
+  const quickPick = vscode.window.createQuickPick();
+  quickPick.title = "ASCII Agent — Token Usage";
+  quickPick.placeholder = "";
+  quickPick.ignoreFocusOut = false;
+  quickPick.canSelectMany = false;
+
+  quickPick.items = [
+    { label: "Session (this window)", kind: vscode.QuickPickItemKind.Separator },
+    {
+      label: `  ~${fmt(sessionTotal)} tokens   (${sessionReqLabel})  — ~${fmt(session.inputTokensEstimate)} in / ~${fmt(session.outputTokensEstimate)} out`,
+      alwaysShow: true,
+    },
+    { label: "Lifetime (all time)", kind: vscode.QuickPickItemKind.Separator },
+    {
+      label: `  ~${fmt(lifetimeTotal)} tokens   (${lifetimeReqLabel}) — ~${fmt(lifetime.inputTokensEstimate)} in / ~${fmt(lifetime.outputTokensEstimate)} out`,
+      alwaysShow: true,
+    },
+    {
+      label: "Note: Estimates only — LM streaming API does not provide exact counts.",
+      kind: vscode.QuickPickItemKind.Separator,
+    },
+  ];
+
+  // Dismiss on any item selection.
+  quickPick.onDidAccept(() => quickPick.hide());
+  quickPick.onDidHide(() => quickPick.dispose());
+
+  quickPick.show();
 }
 
 // ---------------------------------------------------------------------------
@@ -458,20 +543,22 @@ async function safeGenerateAndWriteFileTree(
 
 /**
  * Safely generate and write the architecture diagram.
- * Silently skips if the LM is unavailable.
- *
- * @param workspaceRoot - URI of workspace root.
- */
-/**
- * Safely generate and write the architecture diagram.
  * Returns `true` if the diagram was generated and written, `false` if the LM
- * was unavailable or generation failed. Callers can use the return value to
- * decide whether to surface a follow-up prompt to the user.
+ * was unavailable or generation failed.
+ *
+ * Accepts an optional `progress` reporter and cancellation token so callers
+ * can surface a live elapsed-time notification to the user while the LM streams.
  *
  * @param workspaceRoot - URI of workspace root.
+ * @param progress      - Optional VS Code progress reporter for notification messages.
+ * @param archToken     - Optional cancellation token from the progress dialog.
  * @returns Whether the diagram was successfully generated.
  */
-async function safeGenerateArchitecture(workspaceRoot: vscode.Uri): Promise<boolean> {
+async function safeGenerateArchitecture(
+  workspaceRoot: vscode.Uri,
+  progress?: vscode.Progress<{ message?: string; increment?: number }>,
+  archToken?: vscode.CancellationToken,
+): Promise<boolean> {
   try {
     const { generateArchitectureDiagram } = await import("./architecture-agent");
     const { createLmClient } = await import("./lm-client");
@@ -484,12 +571,35 @@ async function safeGenerateArchitecture(workspaceRoot: vscode.Uri): Promise<bool
         return false;
       }
 
-      const archContent = await generateArchitectureDiagram(currentConfig, workspaceRoot, lmClient);
+      // Start elapsed-time ticker so the user knows progress is happening.
+      const genStart = Date.now();
+      progress?.report({ message: "Generating architecture diagram (AI)... 0s elapsed" });
+      const ticker = setInterval(() => {
+        const elapsed = Math.round((Date.now() - genStart) / 1000);
+        progress?.report({ message: `Generating architecture diagram (AI)... ${elapsed}s elapsed` });
+      }, 1000);
 
-      await saveSnapshot(workspaceRoot, archContent);
+      let archResult: ArchitectureGenerationResult | undefined;
+      try {
+        archResult = await generateArchitectureDiagram(currentConfig, workspaceRoot, lmClient, archToken);
+      } finally {
+        clearInterval(ticker);
+      }
+
+      if (archToken?.isCancellationRequested || !archResult) {
+        return false;
+      }
+
+      await saveSnapshot(workspaceRoot, archResult.diagram);
       await pruneHistory(workspaceRoot);
-      await writeOutputFile(workspaceRoot, currentConfig.outputPaths.architecture, archContent);
-      log.info("Architecture diagram written successfully.");
+      await writeOutputFile(workspaceRoot, currentConfig.outputPaths.architecture, archResult.diagram);
+
+      // Record token usage estimates for this request.
+      await recordTokenUsage(extensionContext, archResult.inputTokensEstimate, archResult.outputTokensEstimate);
+
+      const elapsed = ((Date.now() - genStart) / 1000).toFixed(1);
+      progress?.report({ message: `Architecture diagram complete (${elapsed}s)` });
+      log.info(`Architecture diagram written successfully in ${elapsed}s.`);
       return true;
     } finally {
       lmClient.dispose();
@@ -592,5 +702,86 @@ async function promptGitignoreUpdate(workspaceRoot: vscode.Uri): Promise<void> {
     const appended = content.trimEnd() + "\n\n# ASCII Agent history snapshots\n.ascii_history/\n";
     await vscode.workspace.fs.writeFile(gitignoreUri, Buffer.from(appended, "utf-8"));
     log.info("Added .ascii_history/ to .gitignore.");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// First-install welcome prompt
+// ---------------------------------------------------------------------------
+
+const WELCOME_SHOWN_KEY = "asciiAgent.welcomeShown";
+
+/**
+ * Show a one-time welcome dialog the first time ASCII Agent activates in a
+ * workspace. Offers two quick-start actions so the user does not have to look
+ * up commands:
+ *
+ * - **Initialize + Auto-Watch** — runs `commandInitialize` (creates output files
+ *   and starts the file-system watcher for ongoing auto-updates).
+ * - **Generate Once** — runs a single file-tree + architecture generation with no
+ *   watcher, useful for one-off snapshots.
+ *
+ * After the user makes a choice (or dismisses), the flag is saved to `globalState`
+ * so the prompt is never shown again for this installation.
+ *
+ * @param context       - Extension context for `globalState` persistence.
+ * @param workspaceRoot - URI of the current workspace root.
+ */
+async function maybeShowWelcomePrompt(context: vscode.ExtensionContext, workspaceRoot: vscode.Uri): Promise<void> {
+  if (context.globalState.get<boolean>(WELCOME_SHOWN_KEY)) {
+    return; // Already shown — do not show again.
+  }
+
+  // Mark as shown immediately so concurrent activations or crashes do not
+  // cause the prompt to appear twice.
+  await context.globalState.update(WELCOME_SHOWN_KEY, true);
+
+  const INIT_WATCH = "Initialize + Auto-Watch";
+  const GEN_ONCE = "Generate Once (No Watch)";
+
+  const choice = await vscode.window.showInformationMessage(
+    "Welcome to ASCII Agent! Generate an ASCII file-tree and a Copilot-powered " +
+      "architecture diagram for this workspace. Choose how you'd like to start:",
+    { modal: true },
+    INIT_WATCH,
+    GEN_ONCE,
+  );
+
+  if (choice === INIT_WATCH) {
+    log.info("Welcome prompt: user chose Initialize + Auto-Watch.");
+    await commandInitialize(workspaceRoot);
+    // Ensure watcher is running even if autoWatchEnabled was false in config.
+    if (watcherState !== WatcherState.Active) {
+      startWatcher(context, workspaceRoot);
+    }
+  } else if (choice === GEN_ONCE) {
+    log.info("Welcome prompt: user chose Generate Once.");
+    const { generateFileTree } = await import("./tree-generator");
+    const { ensureDirectoryExists } = await import("./utils");
+    const outputDir = currentConfig.outputPaths.fileTree.split("/").slice(0, -1).join("/");
+    await ensureDirectoryExists(vscode.Uri.joinPath(workspaceRoot, outputDir || "docs"));
+    await safeGenerateAndWriteFileTree(workspaceRoot, generateFileTree);
+    let genOnceArch = false;
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: "ASCII Agent",
+        cancellable: true,
+      },
+      async (progress, archToken) => {
+        genOnceArch = await safeGenerateArchitecture(workspaceRoot, progress, archToken);
+      },
+    );
+    if (genOnceArch) {
+      vscode.window.showInformationMessage(
+        'ASCII Agent: Diagrams generated. Run "ASCII Agent: Toggle Auto-Watch" any time to enable automatic updates.',
+      );
+    } else {
+      vscode.window.showWarningMessage(
+        'ASCII Agent: File tree created. Architecture diagram skipped — Copilot not available yet. Run "ASCII Agent: Generate Now" once Copilot is ready.',
+      );
+    }
+  } else {
+    log.info("Welcome prompt: dismissed by user.");
   }
 }

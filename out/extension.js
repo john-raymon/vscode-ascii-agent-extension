@@ -1,25 +1,653 @@
-"use strict";var Fe=Object.create;var H=Object.defineProperty;var $e=Object.getOwnPropertyDescriptor;var Le=Object.getOwnPropertyNames;var ke=Object.getPrototypeOf,We=Object.prototype.hasOwnProperty;var U=(e,t)=>()=>(e&&(t=e(e=0)),t);var F=(e,t)=>{for(var n in t)H(e,n,{get:t[n],enumerable:!0})},he=(e,t,n,i)=>{if(t&&typeof t=="object"||typeof t=="function")for(let o of Le(t))!We.call(e,o)&&o!==n&&H(e,o,{get:()=>t[o],enumerable:!(i=$e(t,o))||i.enumerable});return e};var $=(e,t,n)=>(n=e!=null?Fe(ke(e)):{},he(t||!e||!e.__esModule?H(n,"default",{value:e,enumerable:!0}):n,e)),Ee=e=>he(H({},"__esModule",{value:!0}),e);var me={};F(me,{getDefaultConfig:()=>ne,loadConfig:()=>_,watchConfigFile:()=>ie});function ne(){return{ignore:["node_modules",".git","dist","out",".ascii_history","*.log",".DS_Store","yarn.lock","package-lock.json"],architectureWatchPatterns:["src/**/*.{ts,tsx,js,jsx}","lib/**/*.{ts,tsx,js,jsx}","api/**/*.ts"],outputPaths:{fileTree:"docs/file_tree.md",architecture:"docs/architecture.md"},debounceMs:2e3,maxHistorySnapshots:50,autoWatchEnabled:!0,contextFiles:[],filePriority:[]}}async function _(e){let t=I.Uri.joinPath(e,".asciirc.json"),n=ne(),i;try{let c=await I.workspace.fs.readFile(t);i=Buffer.from(c).toString("utf-8")}catch{return n}let o;try{let c=Ne(i);o=JSON.parse(c)}catch(c){return I.window.showWarningMessage(`ASCII Agent: .asciirc.json is malformed \u2014 using defaults. (${String(c)})`),n}let r=je(n,o);return _e(r)}function ie(e,t){let n=new I.RelativePattern(e,".asciirc.json"),i=I.workspace.createFileSystemWatcher(n),o=async()=>{let d=await _(e);t(d)},r=i.onDidCreate(o),c=i.onDidChange(o),f=i.onDidDelete(async()=>{t(ne())});return{dispose:()=>{i.dispose(),r.dispose(),c.dispose(),f.dispose()}}}function je(e,t){return{ignore:t.ignore!==void 0?t.ignore:e.ignore,architectureWatchPatterns:t.architectureWatchPatterns!==void 0?t.architectureWatchPatterns:e.architectureWatchPatterns,outputPaths:t.outputPaths!==void 0?{...e.outputPaths,...t.outputPaths}:e.outputPaths,debounceMs:t.debounceMs!==void 0?t.debounceMs:e.debounceMs,maxHistorySnapshots:t.maxHistorySnapshots!==void 0?t.maxHistorySnapshots:e.maxHistorySnapshots,autoWatchEnabled:t.autoWatchEnabled!==void 0?t.autoWatchEnabled:e.autoWatchEnabled,contextFiles:t.contextFiles!==void 0?t.contextFiles:e.contextFiles,filePriority:t.filePriority!==void 0?t.filePriority:e.filePriority,tags:t.tags!==void 0?t.tags:e.tags}}function _e(e){return e.debounceMs<500&&(I.window.showWarningMessage("ASCII Agent: debounceMs must be \u2265 500. Resetting to 500."),e.debounceMs=500),e.maxHistorySnapshots<1&&(I.window.showWarningMessage("ASCII Agent: maxHistorySnapshots must be \u2265 1. Resetting to 1."),e.maxHistorySnapshots=1),e}function Ne(e){return e.replace(/\/\/[^\n]*/g,"")}var I,oe=U(()=>{"use strict";I=$(require("vscode"))});function we(e){N=e}var N,s,O=U(()=>{"use strict";s={info(e){N?.appendLine(`[INFO]  ${e}`)},warn(e){N?.appendLine(`[WARN]  ${e}`)},error(e){N?.appendLine(`[ERROR] ${e}`)},raw(e){N?.appendLine(e)}}});var z={};F(z,{ensureDirectoryExists:()=>Oe,matchesAnyPattern:()=>P,workspaceRelativePath:()=>re});function P(e,t){return t.some(n=>Re(e,n))}function re(e,t){let n=t.fsPath.replace(/\\/g,"/").replace(/\/$/,""),i=e.fsPath.replace(/\\/g,"/");return i.startsWith(n+"/")?i.slice(n.length+1):i}async function Oe(e){try{await ve.workspace.fs.createDirectory(e)}catch{}}function Re(e,t){let n=e.replace(/\\/g,"/");return ye(t).some(o=>Be(n,o))}function ye(e){let t=/\{([^{}]*)\}/.exec(e);if(!t)return[e];let n=t[1].split(","),i=[];for(let o of n){let r=e.slice(0,t.index)+o+e.slice(t.index+t[0].length);i.push(...ye(r))}return i}function Be(e,t){let n=t.replace(/[.+^${}()|[\]\\]/g,"\\$&").replace(/\*\*/g,"DOUBLESTAR").replace(/\*/g,"[^/]*").replace(/\u0001DOUBLESTAR\u0001/g,".*").replace(/\?/g,"[^/]");t.includes("/")?n="^"+n+"$":n="(^|.*/)("+n+")$";try{return new RegExp(n).test(e)}catch{return!1}}var ve,k=U(()=>{"use strict";ve=$(require("vscode"))});var Y={};F(Y,{generateFileTree:()=>He});async function He(e,t){let n=t.tags??Ge,i=0,o=!1;async function r(w,v,C){if(o)return[];let u;try{u=await L.workspace.fs.readDirectory(w)}catch{return[]}let l=u.filter(([g])=>{let b=v?`${v}/${g}`:g;return!P(b,t.ignore)&&!P(g,t.ignore)}).sort(([g,b],[E,q])=>{let j=b===L.FileType.Directory,G=q===L.FileType.Directory;return j!==G?j?-1:1:g.localeCompare(E)}),y=[];for(let g=0;g<l.length&&!o;g++){let[b,E]=l[g],q=g===l.length-1,j=v?`${v}/${b}`:b,G=q?"\u2514\u2500\u2500 ":"\u251C\u2500\u2500 ",De=q?"    ":"\u2502   ";if(i++,i>qe){let W=l.length-g;y.push(`${C}... (truncated: ${W} more entries not shown)`),o=!0;break}if(E===L.FileType.Directory){y.push(`${C}${G}${b}/`);let W=await r(L.Uri.joinPath(w,b),j,C+De);y.push(...W)}else{let W=ze(j,n),Ue=W?`  ${W}`:"";y.push(`${C}${G}${b}${Ue}`)}}return y}let c=e.path.split("/").pop()??e.fsPath.split("/").pop()??"workspace",f=await r(e,"","");return`# File Tree
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/config.ts
+var config_exports = {};
+__export(config_exports, {
+  getDefaultConfig: () => getDefaultConfig,
+  loadConfig: () => loadConfig,
+  watchConfigFile: () => watchConfigFile
+});
+function getDefaultConfig() {
+  return {
+    ignore: [
+      "node_modules",
+      ".git",
+      "dist",
+      "out",
+      ".ascii_history",
+      "*.log",
+      ".DS_Store",
+      "yarn.lock",
+      "package-lock.json"
+    ],
+    architectureWatchPatterns: ["src/**/*.{ts,tsx,js,jsx}", "lib/**/*.{ts,tsx,js,jsx}", "api/**/*.ts"],
+    outputPaths: {
+      fileTree: "docs/file_tree.md",
+      architecture: "docs/architecture.md"
+    },
+    debounceMs: 2e3,
+    maxHistorySnapshots: 50,
+    autoWatchEnabled: true,
+    contextFiles: [],
+    filePriority: []
+    // `tags` is intentionally undefined here — tree-generator uses its own defaults when absent.
+  };
+}
+async function loadConfig(workspaceRoot) {
+  const configUri = vscode.Uri.joinPath(workspaceRoot, ".asciirc.json");
+  const defaults = getDefaultConfig();
+  let rawText;
+  try {
+    const bytes = await vscode.workspace.fs.readFile(configUri);
+    rawText = Buffer.from(bytes).toString("utf-8");
+  } catch {
+    return defaults;
+  }
+  let parsed;
+  try {
+    const stripped = stripJsoncComments(rawText);
+    parsed = JSON.parse(stripped);
+  } catch (err) {
+    vscode.window.showWarningMessage(`ASCII Agent: .asciirc.json is malformed \u2014 using defaults. (${String(err)})`);
+    return defaults;
+  }
+  const merged = deepMergeConfig(defaults, parsed);
+  return validateConfig(merged);
+}
+function watchConfigFile(workspaceRoot, onChange) {
+  const pattern = new vscode.RelativePattern(workspaceRoot, ".asciirc.json");
+  const watcher = vscode.workspace.createFileSystemWatcher(pattern);
+  const reload = async () => {
+    const cfg = await loadConfig(workspaceRoot);
+    onChange(cfg);
+  };
+  const onCreate = watcher.onDidCreate(reload);
+  const onChange_ = watcher.onDidChange(reload);
+  const onDelete = watcher.onDidDelete(async () => {
+    onChange(getDefaultConfig());
+  });
+  return {
+    dispose: () => {
+      watcher.dispose();
+      onCreate.dispose();
+      onChange_.dispose();
+      onDelete.dispose();
+    }
+  };
+}
+function deepMergeConfig(base, overrides) {
+  return {
+    ignore: overrides.ignore !== void 0 ? overrides.ignore : base.ignore,
+    architectureWatchPatterns: overrides.architectureWatchPatterns !== void 0 ? overrides.architectureWatchPatterns : base.architectureWatchPatterns,
+    outputPaths: overrides.outputPaths !== void 0 ? { ...base.outputPaths, ...overrides.outputPaths } : base.outputPaths,
+    debounceMs: overrides.debounceMs !== void 0 ? overrides.debounceMs : base.debounceMs,
+    maxHistorySnapshots: overrides.maxHistorySnapshots !== void 0 ? overrides.maxHistorySnapshots : base.maxHistorySnapshots,
+    autoWatchEnabled: overrides.autoWatchEnabled !== void 0 ? overrides.autoWatchEnabled : base.autoWatchEnabled,
+    contextFiles: overrides.contextFiles !== void 0 ? overrides.contextFiles : base.contextFiles,
+    filePriority: overrides.filePriority !== void 0 ? overrides.filePriority : base.filePriority,
+    // `tags` is optional — only set if user explicitly provided it.
+    tags: overrides.tags !== void 0 ? overrides.tags : base.tags
+  };
+}
+function validateConfig(cfg) {
+  if (cfg.debounceMs < 500) {
+    vscode.window.showWarningMessage("ASCII Agent: debounceMs must be \u2265 500. Resetting to 500.");
+    cfg.debounceMs = 500;
+  }
+  if (cfg.maxHistorySnapshots < 1) {
+    vscode.window.showWarningMessage("ASCII Agent: maxHistorySnapshots must be \u2265 1. Resetting to 1.");
+    cfg.maxHistorySnapshots = 1;
+  }
+  return cfg;
+}
+function stripJsoncComments(text) {
+  return text.replace(/\/\/[^\n]*/g, "");
+}
+var vscode;
+var init_config = __esm({
+  "src/config.ts"() {
+    "use strict";
+    vscode = __toESM(require("vscode"));
+  }
+});
+
+// src/logger.ts
+function initLogger(channel) {
+  _channel = channel;
+}
+var _channel, log;
+var init_logger = __esm({
+  "src/logger.ts"() {
+    "use strict";
+    log = {
+      /**
+       * Log an informational message.
+       * @param message - The message to log.
+       */
+      info(message) {
+        _channel?.appendLine(`[INFO]  ${message}`);
+      },
+      /**
+       * Log a warning message.
+       * @param message - The message to log.
+       */
+      warn(message) {
+        _channel?.appendLine(`[WARN]  ${message}`);
+      },
+      /**
+       * Log an error message.
+       * @param message - The message to log.
+       */
+      error(message) {
+        _channel?.appendLine(`[ERROR] ${message}`);
+      },
+      /**
+       * Log a raw message with no prefix — for structured output (e.g. command output).
+       * @param message - The message to log.
+       */
+      raw(message) {
+        _channel?.appendLine(message);
+      }
+    };
+  }
+});
+
+// src/utils.ts
+var utils_exports = {};
+__export(utils_exports, {
+  ensureDirectoryExists: () => ensureDirectoryExists,
+  matchesAnyPattern: () => matchesAnyPattern,
+  workspaceRelativePath: () => workspaceRelativePath
+});
+function matchesAnyPattern(filePath, patterns) {
+  return patterns.some((pattern) => minimatch(filePath, pattern));
+}
+function workspaceRelativePath(uri, workspaceRoot) {
+  const rootPath = workspaceRoot.fsPath.replace(/\\/g, "/").replace(/\/$/, "");
+  const filePath = uri.fsPath.replace(/\\/g, "/");
+  return filePath.startsWith(rootPath + "/") ? filePath.slice(rootPath.length + 1) : filePath;
+}
+async function ensureDirectoryExists(uri) {
+  try {
+    await vscode2.workspace.fs.createDirectory(uri);
+  } catch {
+  }
+}
+function minimatch(path, pattern) {
+  const normalizedPath = path.replace(/\\/g, "/");
+  const patterns = expandBraces(pattern);
+  return patterns.some((p) => matchGlob(normalizedPath, p));
+}
+function expandBraces(pattern) {
+  const match = /\{([^{}]*)\}/.exec(pattern);
+  if (!match) {
+    return [pattern];
+  }
+  const alternatives = match[1].split(",");
+  const results = [];
+  for (const alt of alternatives) {
+    const expanded = pattern.slice(0, match.index) + alt + pattern.slice(match.index + match[0].length);
+    results.push(...expandBraces(expanded));
+  }
+  return results;
+}
+function matchGlob(path, pattern) {
+  let regexStr = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "DOUBLESTAR").replace(/\*/g, "[^/]*").replace(/\u0001DOUBLESTAR\u0001/g, ".*").replace(/\?/g, "[^/]");
+  if (!pattern.includes("/")) {
+    regexStr = "(^|.*/)(" + regexStr + ")$";
+  } else {
+    regexStr = "^" + regexStr + "$";
+  }
+  try {
+    return new RegExp(regexStr).test(path);
+  } catch {
+    return false;
+  }
+}
+var vscode2;
+var init_utils = __esm({
+  "src/utils.ts"() {
+    "use strict";
+    vscode2 = __toESM(require("vscode"));
+  }
+});
+
+// src/tree-generator.ts
+var tree_generator_exports = {};
+__export(tree_generator_exports, {
+  generateFileTree: () => generateFileTree
+});
+async function generateFileTree(workspaceRoot, config) {
+  const tagMap = config.tags ?? DEFAULT_TAGS;
+  let entryCount = 0;
+  let truncated = false;
+  async function buildLines(dirUri, relPath, prefix) {
+    if (truncated) {
+      return [];
+    }
+    let entries;
+    try {
+      entries = await vscode3.workspace.fs.readDirectory(dirUri);
+    } catch {
+      return [];
+    }
+    const filtered = entries.filter(([name]) => {
+      const entryRelPath = relPath ? `${relPath}/${name}` : name;
+      return !matchesAnyPattern(entryRelPath, config.ignore) && !matchesAnyPattern(name, config.ignore);
+    });
+    const sorted = filtered.sort(([nameA, typeA], [nameB, typeB]) => {
+      const aIsDir = typeA === vscode3.FileType.Directory;
+      const bIsDir = typeB === vscode3.FileType.Directory;
+      if (aIsDir !== bIsDir) {
+        return aIsDir ? -1 : 1;
+      }
+      return nameA.localeCompare(nameB);
+    });
+    const lines = [];
+    for (let i = 0; i < sorted.length; i++) {
+      if (truncated) {
+        break;
+      }
+      const [name, type] = sorted[i];
+      const isLast = i === sorted.length - 1;
+      const entryRelPath = relPath ? `${relPath}/${name}` : name;
+      const connector = isLast ? "\u2514\u2500\u2500 " : "\u251C\u2500\u2500 ";
+      const childPrefix = isLast ? "    " : "\u2502   ";
+      entryCount++;
+      if (entryCount > MAX_ENTRIES) {
+        const remaining = sorted.length - i;
+        lines.push(`${prefix}... (truncated: ${remaining} more entries not shown)`);
+        truncated = true;
+        break;
+      }
+      if (type === vscode3.FileType.Directory) {
+        lines.push(`${prefix}${connector}${name}/`);
+        const childLines = await buildLines(vscode3.Uri.joinPath(dirUri, name), entryRelPath, prefix + childPrefix);
+        lines.push(...childLines);
+      } else {
+        const tag = resolveTag(entryRelPath, tagMap);
+        const tagSuffix = tag ? `  ${tag}` : "";
+        lines.push(`${prefix}${connector}${name}${tagSuffix}`);
+      }
+    }
+    return lines;
+  }
+  const rootName = workspaceRoot.path.split("/").pop() ?? workspaceRoot.fsPath.split("/").pop() ?? "workspace";
+  const bodyLines = await buildLines(workspaceRoot, "", "");
+  const allLines = [rootName + "/", ...bodyLines];
+  const rawTree = allLines.join("\n");
+  return `# File Tree
 
 \`\`\`
-${[c+"/",...f].join(`
-`)}
+${rawTree}
 \`\`\`
-`}function ze(e,t){for(let[n,i]of Object.entries(t))if(P(e,[n]))return i}var L,qe,Ge,J=U(()=>{"use strict";L=$(require("vscode"));k();qe=5e3,Ge={"*.config.*":"[config]","*.json":"[config]","src/components/**":"[ui]","src/**":"[source]","lib/**":"[source]","api/**":"[backend]","docs/**":"[docs]","test/**":"[test]","scripts/**":"[script]"}});var se={};F(se,{cancelPendingTimers:()=>Xe,startWatching:()=>Ye,stopWatching:()=>Je});function Ye(e,t,n){let i=R.workspace.workspaceFolders;if(!i||i.length===0)return s.warn("startWatching: no workspace folder \u2014 aborting."),{dispose:()=>{}};let o=i[0].uri,r=R.workspace.createFileSystemWatcher(new R.RelativePattern(o,"**/*")),c=new Set([e.outputPaths.fileTree,e.outputPaths.architecture]);function f(h){let l=re(h,o);return c.has(l)||l.startsWith(".ascii_history/")||l===".ascii_history"||P(l,e.ignore)||P(l.split("/").pop()??"",e.ignore)?"ignore":P(l,e.architectureWatchPatterns)?"tree-and-arch":"tree-only"}function d(){T!==void 0&&clearTimeout(T),T=setTimeout(async()=>{T=void 0,s.info("Debounce expired \u2014 regenerating file tree.");try{await n.onTreeRegenNeeded()}catch(h){s.error(`Tree regen failed: ${String(h)}`)}},e.debounceMs)}function p(){M!==void 0&&clearTimeout(M),M=setTimeout(async()=>{M=void 0,s.info("Debounce expired \u2014 regenerating architecture diagram.");try{await n.onArchitectureRegenNeeded()}catch(h){s.error(`Architecture regen failed: ${String(h)}`)}},e.debounceMs)}function w(h){let l=f(h);l!=="ignore"&&(d(),l==="tree-and-arch"&&p())}let v=r.onDidCreate(w),C=r.onDidChange(w),u=r.onDidDelete(w);return s.info(`Watcher started. debounceMs=${e.debounceMs}`),{dispose:()=>{T!==void 0&&(clearTimeout(T),T=void 0),M!==void 0&&(clearTimeout(M),M=void 0),v.dispose(),C.dispose(),u.dispose(),r.dispose(),s.info("Watcher stopped.")}}}function Je(e){e.dispose()}function Xe(){T!==void 0&&(clearTimeout(T),T=void 0),M!==void 0&&(clearTimeout(M),M=void 0)}var R,T,M,ae=U(()=>{"use strict";R=$(require("vscode"));k();O()});var ce={};F(ce,{generateArchitectureDiagram:()=>Ve});async function Ve(e,t,n,i){let r=(await A.lm.selectChatModels({vendor:"copilot"}))[0],c=r?Math.floor(r.maxInputTokens*Ke):8e3,f=await Ze(e,t,c,r),d=await nt(e,t),p=await ot(e,t),w=t.path.split("/").filter(Boolean).pop()??t.fsPath.split(/[\\/]/).filter(Boolean).pop()??"workspace",v=Qe.replace("{workspace_folder_name}",w).replace("{previous_architecture}",d||"N/A").replace("{context_files_content}",p||"N/A").replace("{source_files_content}",f||"N/A");s.info(`Sending architecture prompt (~${v.length} chars) to LM.`);let C=[A.LanguageModelChatMessage.User(v)],u=await n.sendPrompt(C,i),h=rt(u);return s.info(`Architecture diagram received (${h.length} chars).`),`# Architecture Diagram
+`;
+}
+function resolveTag(relPath, tagMap) {
+  for (const [pattern, tag] of Object.entries(tagMap)) {
+    if (matchesAnyPattern(relPath, [pattern])) {
+      return tag;
+    }
+  }
+  return void 0;
+}
+var vscode3, MAX_ENTRIES, DEFAULT_TAGS;
+var init_tree_generator = __esm({
+  "src/tree-generator.ts"() {
+    "use strict";
+    vscode3 = __toESM(require("vscode"));
+    init_utils();
+    MAX_ENTRIES = 5e3;
+    DEFAULT_TAGS = {
+      "*.config.*": "[config]",
+      "*.json": "[config]",
+      "src/components/**": "[ui]",
+      "src/**": "[source]",
+      "lib/**": "[source]",
+      "api/**": "[backend]",
+      "docs/**": "[docs]",
+      "test/**": "[test]",
+      "scripts/**": "[script]"
+    };
+  }
+});
+
+// src/watcher.ts
+var watcher_exports = {};
+__export(watcher_exports, {
+  cancelPendingTimers: () => cancelPendingTimers,
+  startWatching: () => startWatching,
+  stopWatching: () => stopWatching
+});
+function startWatching(config, context, handlers) {
+  const workspaceFolders = vscode4.workspace.workspaceFolders;
+  if (!workspaceFolders || workspaceFolders.length === 0) {
+    log.warn("startWatching: no workspace folder \u2014 aborting.");
+    return { dispose: () => void 0 };
+  }
+  const workspaceRoot = workspaceFolders[0].uri;
+  const watcher = vscode4.workspace.createFileSystemWatcher(new vscode4.RelativePattern(workspaceRoot, "**/*"));
+  const outputFilePaths = /* @__PURE__ */ new Set([config.outputPaths.fileTree, config.outputPaths.architecture]);
+  function classifyEvent(uri) {
+    const relPath = workspaceRelativePath(uri, workspaceRoot);
+    if (outputFilePaths.has(relPath)) {
+      return "ignore";
+    }
+    if (relPath.startsWith(".ascii_history/") || relPath === ".ascii_history") {
+      return "ignore";
+    }
+    if (matchesAnyPattern(relPath, config.ignore) || matchesAnyPattern(relPath.split("/").pop() ?? "", config.ignore)) {
+      return "ignore";
+    }
+    if (matchesAnyPattern(relPath, config.architectureWatchPatterns)) {
+      return "tree-and-arch";
+    }
+    return "tree-only";
+  }
+  function scheduleTreeRegen() {
+    if (treeDebounceTimer !== void 0) {
+      clearTimeout(treeDebounceTimer);
+    }
+    treeDebounceTimer = setTimeout(async () => {
+      treeDebounceTimer = void 0;
+      log.info("Debounce expired \u2014 regenerating file tree.");
+      try {
+        await handlers.onTreeRegenNeeded();
+      } catch (err) {
+        log.error(`Tree regen failed: ${String(err)}`);
+      }
+    }, config.debounceMs);
+  }
+  function scheduleArchRegen() {
+    if (archDebounceTimer !== void 0) {
+      clearTimeout(archDebounceTimer);
+    }
+    archDebounceTimer = setTimeout(async () => {
+      archDebounceTimer = void 0;
+      log.info("Debounce expired \u2014 regenerating architecture diagram.");
+      try {
+        await handlers.onArchitectureRegenNeeded();
+      } catch (err) {
+        log.error(`Architecture regen failed: ${String(err)}`);
+      }
+    }, config.debounceMs);
+  }
+  function handleEvent(uri) {
+    const classification = classifyEvent(uri);
+    if (classification === "ignore") {
+      return;
+    }
+    scheduleTreeRegen();
+    if (classification === "tree-and-arch") {
+      scheduleArchRegen();
+    }
+  }
+  const onCreate = watcher.onDidCreate(handleEvent);
+  const onChange = watcher.onDidChange(handleEvent);
+  const onDelete = watcher.onDidDelete(handleEvent);
+  log.info(`Watcher started. debounceMs=${config.debounceMs}`);
+  return {
+    dispose: () => {
+      if (treeDebounceTimer !== void 0) {
+        clearTimeout(treeDebounceTimer);
+        treeDebounceTimer = void 0;
+      }
+      if (archDebounceTimer !== void 0) {
+        clearTimeout(archDebounceTimer);
+        archDebounceTimer = void 0;
+      }
+      onCreate.dispose();
+      onChange.dispose();
+      onDelete.dispose();
+      watcher.dispose();
+      log.info("Watcher stopped.");
+    }
+  };
+}
+function stopWatching(session) {
+  session.dispose();
+}
+function cancelPendingTimers() {
+  if (treeDebounceTimer !== void 0) {
+    clearTimeout(treeDebounceTimer);
+    treeDebounceTimer = void 0;
+  }
+  if (archDebounceTimer !== void 0) {
+    clearTimeout(archDebounceTimer);
+    archDebounceTimer = void 0;
+  }
+}
+var vscode4, treeDebounceTimer, archDebounceTimer;
+var init_watcher = __esm({
+  "src/watcher.ts"() {
+    "use strict";
+    vscode4 = __toESM(require("vscode"));
+    init_utils();
+    init_logger();
+  }
+});
+
+// src/architecture-agent.ts
+var architecture_agent_exports = {};
+__export(architecture_agent_exports, {
+  generateArchitectureDiagram: () => generateArchitectureDiagram
+});
+async function generateArchitectureDiagram(config, workspaceRoot, lmClient, token) {
+  const models = await vscode5.lm.selectChatModels({ vendor: "copilot" });
+  const model = models[0];
+  const tokenBudget = model ? Math.floor(model.maxInputTokens * INPUT_BUDGET_FRACTION) : 8e3;
+  const sourceContent = await gatherSourceContext(config, workspaceRoot, tokenBudget, model);
+  const previousArchitecture = await readPreviousArchitecture(config, workspaceRoot);
+  const contextFilesContent = await readContextFiles(config, workspaceRoot);
+  const workspaceFolderName = workspaceRoot.path.split("/").filter(Boolean).pop() ?? workspaceRoot.fsPath.split(/[\\/]/).filter(Boolean).pop() ?? "workspace";
+  const promptText = SYSTEM_PROMPT_TEMPLATE.replace("{workspace_folder_name}", workspaceFolderName).replace("{previous_architecture}", previousArchitecture || "N/A").replace("{context_files_content}", contextFilesContent || "N/A").replace("{source_files_content}", sourceContent || "N/A");
+  log.info(`Sending architecture prompt (~${promptText.length} chars) to LM.`);
+  const messages = [vscode5.LanguageModelChatMessage.User(promptText)];
+  const rawResponse = await lmClient.sendPrompt(messages, token);
+  const cleaned = postProcessResponse(rawResponse);
+  log.info(`Architecture diagram received (${cleaned.length} chars).`);
+  const diagram = `# Architecture Diagram
 
 \`\`\`
-${h.trimEnd()}
+${cleaned.trimEnd()}
 \`\`\`
-`}async function Ze(e,t,n,i){let o=await et(e,t),r=tt(o,e),c=[],f=0;for(let d of r){let p=A.Uri.joinPath(t,d),w;try{let u=await A.workspace.fs.readFile(p);w=Buffer.from(u).toString("utf-8")}catch{continue}let v=`// File: ${d}
-${w}
-`,C=i?await st(i,v):Math.ceil(v.length/4);if(f+C>n){s.info(`Token budget reached. Skipping ${d} and remaining files.`);break}c.push(v),f+=C}return c.join(`
----
-`)}async function et(e,t){let n=[];async function i(o,r){let c;try{c=await A.workspace.fs.readDirectory(o)}catch{return}for(let[f,d]of c){let p=r?`${r}/${f}`:f;P(p,e.ignore)||P(f,e.ignore)||(d===A.FileType.Directory?await i(A.Uri.joinPath(o,f),p):d===A.FileType.File&&P(p,e.architectureWatchPatterns)&&n.push(p))}}return await i(t,""),n.sort()}function tt(e,t){if(t.filePriority.length>0)return[...e].sort((i,o)=>{let r=Ae(i,t.filePriority),c=Ae(o,t.filePriority);return r!==c?r-c:i.localeCompare(o)});let n=new Set(t.contextFiles);return[...e].sort((i,o)=>{let r=Ce(i,n),c=Ce(o,n);return r!==c?r-c:i.localeCompare(o)})}function Ae(e,t){for(let n=0;n<t.length;n++)if(P(e,[t[n]]))return n;return t.length}function Ce(e,t){if(t.has(e))return 0;let n=e.split("/");return(n[0]==="src"||n[0]==="lib")&&n.length===2?1:n[0]==="src"||n[0]==="lib"?2:3}async function nt(e,t){try{let n=A.Uri.joinPath(t,e.outputPaths.architecture),i=await A.workspace.fs.readFile(n),o=Buffer.from(i).toString("utf-8");return it(o)}catch{return""}}function it(e){let t=e.match(/^(?:#[^\n]*\n+)?```[^\n]*\n([\s\S]*?)```\s*$/m);return t?t[1].trimEnd():e}async function ot(e,t){if(e.contextFiles.length===0)return"";let n=[];for(let i of e.contextFiles)try{let o=A.Uri.joinPath(t,i),r=await A.workspace.fs.readFile(o);n.push(`// Context file: ${i}
-${Buffer.from(r).toString("utf-8")}`)}catch{s.warn(`Could not read context file: ${i}`)}return n.join(`
----
-`)}function rt(e){let t=e.replace(/^```[a-z]*\n?/gm,"").replace(/^```\n?/gm,""),n=t.split(`
-`),i=n.findIndex(r=>/^[+|]/.test(r.trim())||/^[-+]{3,}/.test(r.trim())),o=-1;for(let r=n.length-1;r>=0;r--)if(/^[+|]/.test(n[r].trim())||/^[-+]{3,}/.test(n[r].trim())){o=r;break}return i!==-1&&o!==-1&&i<=o&&(t=n.slice(i,o+1).join(`
-`)),t.trim()+`
-`}async function st(e,t){try{return await e.countTokens(t)}catch{return Math.ceil(t.length/4)}}var A,Ke,Qe,de=U(()=>{"use strict";A=$(require("vscode"));k();O();Ke=.8,Qe=`You are an ASCII architecture diagram generator for the software project "{workspace_folder_name}".
+`;
+  return {
+    diagram,
+    inputTokensEstimate: Math.ceil(promptText.length / 4),
+    outputTokensEstimate: Math.ceil(rawResponse.length / 4)
+  };
+}
+async function gatherSourceContext(config, workspaceRoot, tokenBudget, model) {
+  const allCandidates = await collectCandidateFiles(config, workspaceRoot);
+  const prioritized = prioritizeFiles(allCandidates, config);
+  const sections = [];
+  let usedTokens = 0;
+  for (const relPath of prioritized) {
+    const fileUri = vscode5.Uri.joinPath(workspaceRoot, relPath);
+    let content;
+    try {
+      const bytes = await vscode5.workspace.fs.readFile(fileUri);
+      content = Buffer.from(bytes).toString("utf-8");
+    } catch {
+      continue;
+    }
+    const fileSection = `// File: ${relPath}
+${content}
+`;
+    const tokenCount = model ? await safeCountTokens(model, fileSection) : Math.ceil(fileSection.length / 4);
+    if (usedTokens + tokenCount > tokenBudget) {
+      log.info(`Token budget reached. Skipping ${relPath} and remaining files.`);
+      break;
+    }
+    sections.push(fileSection);
+    usedTokens += tokenCount;
+  }
+  return sections.join("\n---\n");
+}
+async function collectCandidateFiles(config, workspaceRoot) {
+  const candidates = [];
+  async function walk(dirUri, relBase) {
+    let entries;
+    try {
+      entries = await vscode5.workspace.fs.readDirectory(dirUri);
+    } catch {
+      return;
+    }
+    for (const [name, type] of entries) {
+      const relPath = relBase ? `${relBase}/${name}` : name;
+      if (matchesAnyPattern(relPath, config.ignore) || matchesAnyPattern(name, config.ignore)) {
+        continue;
+      }
+      if (type === vscode5.FileType.Directory) {
+        await walk(vscode5.Uri.joinPath(dirUri, name), relPath);
+      } else if (type === vscode5.FileType.File) {
+        if (matchesAnyPattern(relPath, config.architectureWatchPatterns)) {
+          candidates.push(relPath);
+        }
+      }
+    }
+  }
+  await walk(workspaceRoot, "");
+  return candidates.sort();
+}
+function prioritizeFiles(candidates, config) {
+  if (config.filePriority.length > 0) {
+    return [...candidates].sort((a, b) => {
+      const scoreA = getPriorityScore(a, config.filePriority);
+      const scoreB = getPriorityScore(b, config.filePriority);
+      if (scoreA !== scoreB) {
+        return scoreA - scoreB;
+      }
+      return a.localeCompare(b);
+    });
+  }
+  const contextSet = new Set(config.contextFiles);
+  return [...candidates].sort((a, b) => {
+    const aScore = heuristicScore(a, contextSet);
+    const bScore = heuristicScore(b, contextSet);
+    if (aScore !== bScore) {
+      return aScore - bScore;
+    }
+    return a.localeCompare(b);
+  });
+}
+function getPriorityScore(path, filePriority) {
+  for (let i = 0; i < filePriority.length; i++) {
+    if (matchesAnyPattern(path, [filePriority[i]])) {
+      return i;
+    }
+  }
+  return filePriority.length;
+}
+function heuristicScore(path, contextSet) {
+  if (contextSet.has(path)) {
+    return 0;
+  }
+  const parts = path.split("/");
+  const inRoot = (parts[0] === "src" || parts[0] === "lib") && parts.length === 2;
+  if (inRoot) {
+    return 1;
+  }
+  if (parts[0] === "src" || parts[0] === "lib") {
+    return 2;
+  }
+  return 3;
+}
+async function readPreviousArchitecture(config, workspaceRoot) {
+  try {
+    const archUri = vscode5.Uri.joinPath(workspaceRoot, config.outputPaths.architecture);
+    const bytes = await vscode5.workspace.fs.readFile(archUri);
+    const raw = Buffer.from(bytes).toString("utf-8");
+    return stripMarkdownCodeBlock(raw);
+  } catch {
+    return "";
+  }
+}
+function stripMarkdownCodeBlock(content) {
+  const match = content.match(/^(?:#[^\n]*\n+)?```[^\n]*\n([\s\S]*?)```\s*$/m);
+  return match ? match[1].trimEnd() : content;
+}
+async function readContextFiles(config, workspaceRoot) {
+  if (config.contextFiles.length === 0) {
+    return "";
+  }
+  const parts = [];
+  for (const relPath of config.contextFiles) {
+    try {
+      const fileUri = vscode5.Uri.joinPath(workspaceRoot, relPath);
+      const bytes = await vscode5.workspace.fs.readFile(fileUri);
+      parts.push(`// Context file: ${relPath}
+${Buffer.from(bytes).toString("utf-8")}`);
+    } catch {
+      log.warn(`Could not read context file: ${relPath}`);
+    }
+  }
+  return parts.join("\n---\n");
+}
+function postProcessResponse(raw) {
+  let cleaned = raw.replace(/^```[a-z]*\n?/gm, "").replace(/^```\n?/gm, "");
+  const lines = cleaned.split("\n");
+  const firstDiagramLine = lines.findIndex((line) => /^[+|]/.test(line.trim()) || /^[-+]{3,}/.test(line.trim()));
+  let lastDiagramLine = -1;
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (/^[+|]/.test(lines[i].trim()) || /^[-+]{3,}/.test(lines[i].trim())) {
+      lastDiagramLine = i;
+      break;
+    }
+  }
+  if (firstDiagramLine !== -1 && lastDiagramLine !== -1 && firstDiagramLine <= lastDiagramLine) {
+    cleaned = lines.slice(firstDiagramLine, lastDiagramLine + 1).join("\n");
+  }
+  return cleaned.trim() + "\n";
+}
+async function safeCountTokens(model, text) {
+  try {
+    const count = await model.countTokens(text);
+    return count;
+  } catch {
+    return Math.ceil(text.length / 4);
+  }
+}
+var vscode5, INPUT_BUDGET_FRACTION, SYSTEM_PROMPT_TEMPLATE;
+var init_architecture_agent = __esm({
+  "src/architecture-agent.ts"() {
+    "use strict";
+    vscode5 = __toESM(require("vscode"));
+    init_utils();
+    init_logger();
+    INPUT_BUDGET_FRACTION = 0.8;
+    SYSTEM_PROMPT_TEMPLATE = `You are an ASCII architecture diagram generator for the software project "{workspace_folder_name}".
 
 Your job is to produce a CONCEPTUAL data-flow diagram in pure ASCII art. The diagram must show:
 - Major logical modules and their responsibilities
@@ -45,13 +673,710 @@ PROJECT CONTEXT (if available):
 SOURCE CODE CONTEXT:
 {source_files_content}
 
-Generate the updated architecture diagram now.`});var ue={};F(ue,{createLmClient:()=>at});function at(){let e,t=!1,n,i,o;async function r(){try{let u=await D.lm.selectChatModels({vendor:"copilot"});if(u.length>0)return e=u[0],s.info(`LM model selected: ${e.name} (vendor: ${e.vendor})`),e}catch(u){s.warn(`Model selection failed: ${String(u)}`)}e=void 0}let c=r();o=D.lm.onDidChangeChatModels(()=>{s.info("LM models changed \u2014 re-selecting."),c=r()});async function f(u,h){if(t)throw s.warn("LM quota cooldown active \u2014 skipping request."),new Error("ASCII Agent: LM quota cooldown active. Skipping request.");let l=e??await r();if(!l)throw new Error("ASCII Agent: No Copilot LM model available.");i&&(i.cancel(),i.dispose(),i=void 0);let y=new D.CancellationTokenSource;i=y;let g;h&&(g=h.onCancellationRequested(()=>y.cancel()));try{return await d(l,u,y.token)}finally{g?.dispose(),i===y&&(i=void 0),y.dispose()}}async function d(u,h,l){for(let y=0;y<2;y++)try{let g=await u.sendRequest(h,{},l),b="";for await(let E of g.text){if(l.isCancellationRequested)return b;b+=E}return b}catch(g){if(g instanceof D.LanguageModelError)return await p(g,y);if(y===0){s.warn(`LM request failed (attempt ${y+1}): ${String(g)}. Retrying in ${X}ms...`),await Se(X);continue}throw s.warn(`LM request failed after retry: ${String(g)}`),g}throw new Error("ASCII Agent: Unexpected end of executeRequest loop.")}async function p(u,h){let l=u.message.toLowerCase();throw l.includes("quota")||l.includes("rate limit")||u.code==="quota-exceeded"?(t=!0,s.warn(`LM quota exceeded. Cooldown for ${Pe/1e3}s.`),n=setTimeout(()=>{t=!1,s.info("LM quota cooldown expired.")},Pe),u):l.includes("consent")||l.includes("not authorized")||u.code==="no-permissions"?(s.warn("Copilot consent not given. Prompting user."),D.window.showInformationMessage("ASCII Agent: Please authorize GitHub Copilot to enable architecture diagram generation."),u):h===0?(s.warn(`LM error (attempt ${h+1}): ${String(u)}. Retrying in ${X/1e3}s...`),await Se(X),u):(s.error(`LM error after retry: ${String(u)}`),u)}function w(){i&&(i.cancel(),i.dispose(),i=void 0)}async function v(){return e===void 0&&await c,e!==void 0&&!t}function C(){w(),o?.dispose(),n!==void 0&&clearTimeout(n)}return{sendPrompt:f,cancelAll:w,isAvailable:v,dispose:C}}function Se(e){return new Promise(t=>setTimeout(t,e))}var D,Pe,X,le=U(()=>{"use strict";D=$(require("vscode"));O();Pe=6e4,X=3e3});var K={};F(K,{pruneSnapshots:()=>dt,saveSnapshot:()=>ct});async function ct(e,t){let n=S.Uri.joinPath(e,be);try{await S.workspace.fs.createDirectory(n)}catch{}let o=`architecture_${new Date().toISOString().replace(/:/g,"-")}.txt`,r=S.Uri.joinPath(n,o);await S.workspace.fs.writeFile(r,Buffer.from(t,"utf-8"))}async function dt(e,t){let n=S.Uri.joinPath(e,be),i;try{i=await S.workspace.fs.readDirectory(n)}catch{return}let o=i.filter(([d,p])=>p===S.FileType.File&&d.endsWith(".txt")).map(([d])=>d);if(o.length<=t)return;let r=[];for(let d of o)try{let p=await S.workspace.fs.stat(S.Uri.joinPath(n,d));r.push({name:d,mtime:p.mtime})}catch{r.push({name:d,mtime:0})}r.sort((d,p)=>d.mtime-p.mtime);let c=t-1,f=r.slice(0,r.length-c);for(let{name:d}of f)try{await S.workspace.fs.delete(S.Uri.joinPath(n,d))}catch{}}var S,be,Q=U(()=>{"use strict";S=$(require("vscode")),be=".ascii_history"});var vt={};F(vt,{activate:()=>ut,deactivate:()=>lt,resolveWorkspaceRoot:()=>V});module.exports=Ee(vt);var a=$(require("vscode"));oe();O();var m,B="disabled",x,Z;function V(){return a.workspace.workspaceFolders?.[0]?.uri}function fe(){a.window.showWarningMessage("ASCII Agent: No workspace folder is open."),s.warn("Command invoked with no open workspace folder.")}async function ut(e){let t=a.window.createOutputChannel("ASCII Agent");if(e.subscriptions.push(t),we(t),!a.workspace.workspaceFolders||a.workspace.workspaceFolders.length===0){s.warn("No workspace folder open \u2014 aborting activation.");return}a.workspace.workspaceFolders.length>1&&(s.warn("Multiple workspace folders detected. Only the first folder will be monitored."),a.window.showWarningMessage("ASCII Agent only monitors the first workspace folder."));let n=a.workspace.workspaceFolders[0].uri;m=await _(n),s.info(`Config loaded. debounceMs=${m.debounceMs}, autoWatch=${m.autoWatchEnabled}`);let i=ie(n,r=>{m=r,s.info("Config reloaded from .asciirc.json."),B==="active"&&(pe(),ge(e,n))});e.subscriptions.push(i),x=a.window.createStatusBarItem(a.StatusBarAlignment.Left,100),x.command="asciiAgent.toggleAutoWatch",te("disabled"),x.show(),e.subscriptions.push(x),e.subscriptions.push(a.commands.registerCommand("asciiAgent.initialize",()=>{let r=V();return r?ft(r):fe()}),a.commands.registerCommand("asciiAgent.generateNow",()=>{let r=V();return r?gt(r):fe()}),a.commands.registerCommand("asciiAgent.toggleAutoWatch",()=>{let r=V();return r?pt(e,r):fe()})),m.autoWatchEnabled&&ge(e,n);let o=a.window.setStatusBarMessage("ASCII Agent: active",3e3);e.subscriptions.push(o),s.info("Activated successfully.")}function lt(){pe(),s.info("Deactivated.")}async function ft(e){s.info("Running: asciiAgent.initialize");let{generateFileTree:t}=await Promise.resolve().then(()=>(J(),Y)),{ensureDirectoryExists:n}=await Promise.resolve().then(()=>(k(),z)),i=m.outputPaths.fileTree.split("/").slice(0,-1).join("/");await n(a.Uri.joinPath(e,i||"docs")),await mt(e),m=await _(e);let o=await ht(e,m);if(o.length>0){let c=o.map(d=>`\u2022 ${d}`).join(`
-`);if(await a.window.showWarningMessage(`ASCII Agent: The following files already exist:
+Generate the updated architecture diagram now.`;
+  }
+});
 
-${c}
+// src/lm-client.ts
+var lm_client_exports = {};
+__export(lm_client_exports, {
+  createLmClient: () => createLmClient
+});
+function createLmClient() {
+  let cachedModel;
+  let quotaCooldown = false;
+  let cooldownTimer;
+  let currentRequestCts;
+  let modelChangeDisposable;
+  async function selectModel() {
+    try {
+      const models = await vscode6.lm.selectChatModels({ vendor: "copilot" });
+      if (models.length > 0) {
+        cachedModel = models[0];
+        log.info(`LM model selected: ${cachedModel.name} (vendor: ${cachedModel.vendor})`);
+        return cachedModel;
+      }
+    } catch (err) {
+      log.warn(`Model selection failed: ${String(err)}`);
+    }
+    cachedModel = void 0;
+    return void 0;
+  }
+  let initialSelectionPromise = selectModel();
+  modelChangeDisposable = vscode6.lm.onDidChangeChatModels(() => {
+    log.info("LM models changed \u2014 re-selecting.");
+    initialSelectionPromise = selectModel();
+  });
+  async function sendPrompt(messages, token) {
+    if (quotaCooldown) {
+      log.warn("LM quota cooldown active \u2014 skipping request.");
+      throw new Error("ASCII Agent: LM quota cooldown active. Skipping request.");
+    }
+    const model = cachedModel ?? await selectModel();
+    if (!model) {
+      throw new Error("ASCII Agent: No Copilot LM model available.");
+    }
+    if (currentRequestCts) {
+      currentRequestCts.cancel();
+      currentRequestCts.dispose();
+      currentRequestCts = void 0;
+    }
+    const cts = new vscode6.CancellationTokenSource();
+    currentRequestCts = cts;
+    let externalCancelDisposable;
+    if (token) {
+      externalCancelDisposable = token.onCancellationRequested(() => cts.cancel());
+    }
+    try {
+      return await executeRequest(model, messages, cts.token);
+    } finally {
+      externalCancelDisposable?.dispose();
+      if (currentRequestCts === cts) {
+        currentRequestCts = void 0;
+      }
+      cts.dispose();
+    }
+  }
+  async function executeRequest(model, messages, token) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await model.sendRequest(messages, {}, token);
+        let fullText = "";
+        for await (const chunk of response.text) {
+          if (token.isCancellationRequested) {
+            return fullText;
+          }
+          fullText += chunk;
+        }
+        return fullText;
+      } catch (err) {
+        if (err instanceof vscode6.LanguageModelError) {
+          return await handleLanguageModelError(err, attempt);
+        }
+        if (attempt === 0) {
+          log.warn(`LM request failed (attempt ${attempt + 1}): ${String(err)}. Retrying in ${RETRY_DELAY_MS}ms...`);
+          await sleep(RETRY_DELAY_MS);
+          continue;
+        }
+        log.warn(`LM request failed after retry: ${String(err)}`);
+        throw err;
+      }
+    }
+    throw new Error("ASCII Agent: Unexpected end of executeRequest loop.");
+  }
+  async function handleLanguageModelError(err, attempt) {
+    const msg = err.message.toLowerCase();
+    if (msg.includes("quota") || msg.includes("rate limit") || err.code === "quota-exceeded") {
+      quotaCooldown = true;
+      log.warn(`LM quota exceeded. Cooldown for ${QUOTA_COOLDOWN_MS / 1e3}s.`);
+      cooldownTimer = setTimeout(() => {
+        quotaCooldown = false;
+        log.info("LM quota cooldown expired.");
+      }, QUOTA_COOLDOWN_MS);
+      throw err;
+    }
+    if (msg.includes("consent") || msg.includes("not authorized") || err.code === "no-permissions") {
+      log.warn("Copilot consent not given. Prompting user.");
+      vscode6.window.showInformationMessage(
+        "ASCII Agent: Please authorize GitHub Copilot to enable architecture diagram generation."
+      );
+      throw err;
+    }
+    if (attempt === 0) {
+      log.warn(`LM error (attempt ${attempt + 1}): ${String(err)}. Retrying in ${RETRY_DELAY_MS / 1e3}s...`);
+      await sleep(RETRY_DELAY_MS);
+      throw err;
+    }
+    log.error(`LM error after retry: ${String(err)}`);
+    throw err;
+  }
+  function cancelAll() {
+    if (currentRequestCts) {
+      currentRequestCts.cancel();
+      currentRequestCts.dispose();
+      currentRequestCts = void 0;
+    }
+  }
+  async function isAvailable() {
+    if (cachedModel === void 0) {
+      await initialSelectionPromise;
+    }
+    return cachedModel !== void 0 && !quotaCooldown;
+  }
+  function dispose() {
+    cancelAll();
+    modelChangeDisposable?.dispose();
+    if (cooldownTimer !== void 0) {
+      clearTimeout(cooldownTimer);
+    }
+  }
+  return { sendPrompt, cancelAll, isAvailable, dispose };
+}
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+var vscode6, QUOTA_COOLDOWN_MS, RETRY_DELAY_MS;
+var init_lm_client = __esm({
+  "src/lm-client.ts"() {
+    "use strict";
+    vscode6 = __toESM(require("vscode"));
+    init_logger();
+    QUOTA_COOLDOWN_MS = 6e4;
+    RETRY_DELAY_MS = 3e3;
+  }
+});
 
-Overwrite them?`,{modal:!0},"Overwrite")!=="Overwrite"){s.info("Initialize cancelled by user \u2014 existing files would be overwritten.");return}}await Ie(e,t),await Te(e)||a.window.showWarningMessage('ASCII Agent: File tree created. Architecture diagram skipped \u2014 Copilot not available yet. Run "ASCII Agent: Generate Now" once Copilot is ready.'),await wt(e),a.window.showInformationMessage("ASCII Agent: Initialization complete."),s.info("Initialization complete.")}async function gt(e){s.info("Running: asciiAgent.generateNow"),await a.window.withProgress({location:a.ProgressLocation.Notification,title:"ASCII Agent",cancellable:!0},async(t,n)=>{Promise.resolve().then(()=>(ae(),se)).then(({cancelPendingTimers:i})=>i()).catch(()=>{}),t.report({message:"Generating file tree..."}),xe(!0);try{let{generateFileTree:i}=await Promise.resolve().then(()=>(J(),Y)),{ensureDirectoryExists:o}=await Promise.resolve().then(()=>(k(),z));if(n.isCancellationRequested)return;let r=m.outputPaths.fileTree.split("/").slice(0,-1).join("/");await o(a.Uri.joinPath(e,r||"docs"));let c=Date.now(),f=await i(e,m);if(await ee(e,m.outputPaths.fileTree,f),s.info(`File tree generated in ${Date.now()-c}ms.`),n.isCancellationRequested)return;t.report({message:"Generating architecture diagram (AI)..."});let{generateArchitectureDiagram:d}=await Promise.resolve().then(()=>(de(),ce)),{createLmClient:p}=await Promise.resolve().then(()=>(le(),ue)),w=p();try{if(!await w.isAvailable()){a.window.showWarningMessage("ASCII Agent: Copilot model not available \u2014 only file tree was regenerated."),s.warn("LM unavailable \u2014 skipping architecture generation.");return}let v=Date.now(),C=await d(m,e,w,n);if(n.isCancellationRequested)return;let{saveSnapshot:u}=await Promise.resolve().then(()=>(Q(),K));await u(e,C),await Me(e),await ee(e,m.outputPaths.architecture,C),s.info(`Architecture diagram generated in ${Date.now()-v}ms.`),a.window.showInformationMessage("ASCII Agent: Diagrams updated.")}finally{w.dispose()}}finally{xe(!1)}})}function pt(e,t){B==="active"?(pe(),a.window.showInformationMessage("ASCII Agent: Auto-watch is now OFF."),s.info("Auto-watch paused by user.")):(ge(e,t),a.window.showInformationMessage("ASCII Agent: Auto-watch is now ON."),s.info("Auto-watch started by user."))}function ge(e,t){Promise.resolve().then(()=>(ae(),se)).then(({startWatching:n})=>{Z=n(m,e,{onTreeRegenNeeded:async()=>{let{generateFileTree:i}=await Promise.resolve().then(()=>(J(),Y));await Ie(t,i)},onArchitectureRegenNeeded:async()=>{await Te(t)}}),e.subscriptions.push(Z),B="active",te("active")})}function pe(){Z?.dispose(),Z=void 0,B="paused",te("paused")}function te(e){if(x)switch(e){case"active":x.text="$(eye) ASCII Agent",x.tooltip="ASCII Agent: auto-watch active. Click to pause.";break;case"paused":x.text="$(eye-closed) ASCII Agent (paused)",x.tooltip="ASCII Agent: auto-watch paused. Click to resume.";break;case"disabled":x.text="$(eye) ASCII Agent",x.tooltip="ASCII Agent: inactive.";break}}function xe(e){x&&(e?x.text="$(sync~spin) ASCII Agent: generating...":te(B))}async function ee(e,t,n){let{ensureDirectoryExists:i}=await Promise.resolve().then(()=>(k(),z)),o=a.Uri.joinPath(e,t),r=t.split("/").slice(0,-1).join("/");r&&await i(a.Uri.joinPath(e,r)),await a.workspace.fs.writeFile(o,Buffer.from(n,"utf-8"))}async function Ie(e,t){try{let n=await t(e,m);await ee(e,m.outputPaths.fileTree,n),s.info("File tree written successfully.")}catch(n){s.error(`Failed to generate file tree: ${String(n)}`)}}async function Te(e){try{let{generateArchitectureDiagram:t}=await Promise.resolve().then(()=>(de(),ce)),{createLmClient:n}=await Promise.resolve().then(()=>(le(),ue)),{saveSnapshot:i}=await Promise.resolve().then(()=>(Q(),K)),o=n();try{if(!await o.isAvailable())return s.info("LM unavailable \u2014 skipping architecture generation."),!1;let r=await t(m,e,o);return await i(e,r),await Me(e),await ee(e,m.outputPaths.architecture,r),s.info("Architecture diagram written successfully."),!0}finally{o.dispose()}}catch(t){return s.error(`Failed to generate architecture diagram: ${String(t)}`),!1}}async function Me(e){try{let{pruneSnapshots:t}=await Promise.resolve().then(()=>(Q(),K));await t(e,m.maxHistorySnapshots)}catch(t){s.warn(`Snapshot pruning failed: ${String(t)}`)}}async function ht(e,t){let n=[t.outputPaths.fileTree,t.outputPaths.architecture],i=[];for(let o of n)try{await a.workspace.fs.stat(a.Uri.joinPath(e,o)),i.push(o)}catch{}return i}async function mt(e){let t=a.Uri.joinPath(e,".asciirc.json");try{await a.workspace.fs.stat(t)}catch{let{getDefaultConfig:n}=await Promise.resolve().then(()=>(oe(),me)),i=n(),o=JSON.stringify(i,null,2);await a.workspace.fs.writeFile(t,Buffer.from(o,"utf-8")),s.info("Created default .asciirc.json.")}}async function wt(e){let t=a.Uri.joinPath(e,".gitignore"),n;try{let o=await a.workspace.fs.readFile(t);n=Buffer.from(o).toString("utf-8")}catch{return}if(n.includes(".ascii_history"))return;if(await a.window.showInformationMessage("ASCII Agent: Add .ascii_history/ to .gitignore?","Yes","No")==="Yes"){let o=n.trimEnd()+`
+// src/history.ts
+var history_exports = {};
+__export(history_exports, {
+  pruneSnapshots: () => pruneSnapshots,
+  saveSnapshot: () => saveSnapshot
+});
+async function saveSnapshot(workspaceRoot, currentContent) {
+  const historyDirUri = vscode7.Uri.joinPath(workspaceRoot, HISTORY_DIR);
+  try {
+    await vscode7.workspace.fs.createDirectory(historyDirUri);
+  } catch {
+  }
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/:/g, "-");
+  const fileName = `architecture_${timestamp}.txt`;
+  const snapshotUri = vscode7.Uri.joinPath(historyDirUri, fileName);
+  await vscode7.workspace.fs.writeFile(snapshotUri, Buffer.from(currentContent, "utf-8"));
+}
+async function pruneSnapshots(workspaceRoot, maxSnapshots) {
+  const historyDirUri = vscode7.Uri.joinPath(workspaceRoot, HISTORY_DIR);
+  let entries;
+  try {
+    entries = await vscode7.workspace.fs.readDirectory(historyDirUri);
+  } catch {
+    return;
+  }
+  const snapshotNames = entries.filter(([name, type]) => type === vscode7.FileType.File && name.endsWith(".txt")).map(([name]) => name);
+  if (snapshotNames.length <= maxSnapshots) {
+    return;
+  }
+  const withMtimes = [];
+  for (const name of snapshotNames) {
+    try {
+      const stat = await vscode7.workspace.fs.stat(vscode7.Uri.joinPath(historyDirUri, name));
+      withMtimes.push({ name, mtime: stat.mtime });
+    } catch {
+      withMtimes.push({ name, mtime: 0 });
+    }
+  }
+  withMtimes.sort((a, b) => a.mtime - b.mtime);
+  const targetCount = maxSnapshots - 1;
+  const toDelete = withMtimes.slice(0, withMtimes.length - targetCount);
+  for (const { name } of toDelete) {
+    try {
+      await vscode7.workspace.fs.delete(vscode7.Uri.joinPath(historyDirUri, name));
+    } catch {
+    }
+  }
+}
+var vscode7, HISTORY_DIR;
+var init_history = __esm({
+  "src/history.ts"() {
+    "use strict";
+    vscode7 = __toESM(require("vscode"));
+    HISTORY_DIR = ".ascii_history";
+  }
+});
 
-# ASCII Agent history snapshots
-.ascii_history/
-`;await a.workspace.fs.writeFile(t,Buffer.from(o,"utf-8")),s.info("Added .ascii_history/ to .gitignore.")}}0&&(module.exports={activate,deactivate,resolveWorkspaceRoot});
+// src/extension.ts
+var extension_exports = {};
+__export(extension_exports, {
+  activate: () => activate,
+  deactivate: () => deactivate,
+  resolveWorkspaceRoot: () => resolveWorkspaceRoot
+});
+module.exports = __toCommonJS(extension_exports);
+var vscode8 = __toESM(require("vscode"));
+init_config();
+init_logger();
+
+// src/token-tracker.ts
+init_logger();
+var LIFETIME_KEY = "asciiAgent.tokenUsage.lifetime";
+var SESSION_KEY = "asciiAgent.tokenUsage.session";
+async function recordTokenUsage(context, inputTokensEstimate, outputTokensEstimate) {
+  const session = getSessionTokenUsage(context);
+  const newSession = {
+    inputTokensEstimate: session.inputTokensEstimate + inputTokensEstimate,
+    outputTokensEstimate: session.outputTokensEstimate + outputTokensEstimate,
+    requestCount: session.requestCount + 1
+  };
+  await context.globalState.update(SESSION_KEY, newSession);
+  const lifetime = getLifetimeTokenUsage(context);
+  const newLifetime = {
+    inputTokensEstimate: lifetime.inputTokensEstimate + inputTokensEstimate,
+    outputTokensEstimate: lifetime.outputTokensEstimate + outputTokensEstimate,
+    requestCount: lifetime.requestCount + 1
+  };
+  await context.globalState.update(LIFETIME_KEY, newLifetime);
+  log.info(
+    `Token usage \u2014 request: ~${inputTokensEstimate} in / ~${outputTokensEstimate} out | session total: ~${newSession.inputTokensEstimate + newSession.outputTokensEstimate} tokens (${newSession.requestCount} requests) | lifetime: ~${newLifetime.inputTokensEstimate + newLifetime.outputTokensEstimate} tokens (${newLifetime.requestCount} requests)`
+  );
+}
+async function resetSessionTokens(context) {
+  await context.globalState.update(SESSION_KEY, {
+    inputTokensEstimate: 0,
+    outputTokensEstimate: 0,
+    requestCount: 0
+  });
+}
+function getSessionTokenUsage(context) {
+  return context.globalState.get(SESSION_KEY) ?? emptyTotals();
+}
+function getLifetimeTokenUsage(context) {
+  return context.globalState.get(LIFETIME_KEY) ?? emptyTotals();
+}
+function emptyTotals() {
+  return { inputTokensEstimate: 0, outputTokensEstimate: 0, requestCount: 0 };
+}
+
+// src/extension.ts
+var currentConfig;
+var watcherState = "disabled" /* Disabled */;
+var statusBarItem;
+var watcherSessionDisposable;
+var extensionContext;
+function resolveWorkspaceRoot() {
+  return vscode8.workspace.workspaceFolders?.[0]?.uri;
+}
+function warnNoWorkspace() {
+  vscode8.window.showWarningMessage("ASCII Agent: No workspace folder is open.");
+  log.warn("Command invoked with no open workspace folder.");
+}
+async function activate(context) {
+  const channel = vscode8.window.createOutputChannel("ASCII Agent");
+  context.subscriptions.push(channel);
+  initLogger(channel);
+  extensionContext = context;
+  await resetSessionTokens(context);
+  if (!vscode8.workspace.workspaceFolders || vscode8.workspace.workspaceFolders.length === 0) {
+    log.warn("No workspace folder open \u2014 aborting activation.");
+    return;
+  }
+  if (vscode8.workspace.workspaceFolders.length > 1) {
+    log.warn("Multiple workspace folders detected. Only the first folder will be monitored.");
+    vscode8.window.showWarningMessage("ASCII Agent only monitors the first workspace folder.");
+  }
+  const workspaceRoot = vscode8.workspace.workspaceFolders[0].uri;
+  currentConfig = await loadConfig(workspaceRoot);
+  log.info(`Config loaded. debounceMs=${currentConfig.debounceMs}, autoWatch=${currentConfig.autoWatchEnabled}`);
+  const configWatcherDisposable = watchConfigFile(workspaceRoot, (newCfg) => {
+    currentConfig = newCfg;
+    log.info("Config reloaded from .asciirc.json.");
+    if (watcherState === "active" /* Active */) {
+      stopWatcher();
+      startWatcher(context, workspaceRoot);
+    }
+  });
+  context.subscriptions.push(configWatcherDisposable);
+  statusBarItem = vscode8.window.createStatusBarItem(vscode8.StatusBarAlignment.Left, 100);
+  statusBarItem.command = "asciiAgent.toggleAutoWatch";
+  updateStatusBar("disabled" /* Disabled */);
+  statusBarItem.show();
+  context.subscriptions.push(statusBarItem);
+  context.subscriptions.push(
+    vscode8.commands.registerCommand("asciiAgent.initialize", () => {
+      const root = resolveWorkspaceRoot();
+      return root ? commandInitialize(root) : warnNoWorkspace();
+    }),
+    vscode8.commands.registerCommand("asciiAgent.generateNow", () => {
+      const root = resolveWorkspaceRoot();
+      return root ? commandGenerateNow(root) : warnNoWorkspace();
+    }),
+    vscode8.commands.registerCommand("asciiAgent.toggleAutoWatch", () => {
+      const root = resolveWorkspaceRoot();
+      return root ? commandToggleAutoWatch(context, root) : warnNoWorkspace();
+    }),
+    vscode8.commands.registerCommand("asciiAgent.showTokenUsage", () => commandShowTokenUsage(context))
+  );
+  if (currentConfig.autoWatchEnabled) {
+    startWatcher(context, workspaceRoot);
+  }
+  const msg = vscode8.window.setStatusBarMessage("ASCII Agent: active", 3e3);
+  context.subscriptions.push(msg);
+  await maybeShowWelcomePrompt(context, workspaceRoot);
+  log.info("Activated successfully.");
+}
+function deactivate() {
+  stopWatcher();
+  log.info("Deactivated.");
+}
+async function commandInitialize(workspaceRoot) {
+  log.info("Running: asciiAgent.initialize");
+  const { generateFileTree: generateFileTree2 } = await Promise.resolve().then(() => (init_tree_generator(), tree_generator_exports));
+  const { ensureDirectoryExists: ensureDirectoryExists2 } = await Promise.resolve().then(() => (init_utils(), utils_exports));
+  const outputDir = currentConfig.outputPaths.fileTree.split("/").slice(0, -1).join("/");
+  await ensureDirectoryExists2(vscode8.Uri.joinPath(workspaceRoot, outputDir || "docs"));
+  await maybeCreateDefaultAsciirc(workspaceRoot);
+  currentConfig = await loadConfig(workspaceRoot);
+  const existingFiles = await detectExistingOutputFiles(workspaceRoot, currentConfig);
+  if (existingFiles.length > 0) {
+    const fileList = existingFiles.map((f) => `\u2022 ${f}`).join("\n");
+    const choice = await vscode8.window.showWarningMessage(
+      `ASCII Agent: The following files already exist:
+
+${fileList}
+
+Overwrite them?`,
+      { modal: true },
+      "Overwrite"
+    );
+    if (choice !== "Overwrite") {
+      log.info("Initialize cancelled by user \u2014 existing files would be overwritten.");
+      return;
+    }
+  }
+  await safeGenerateAndWriteFileTree(workspaceRoot, generateFileTree2);
+  let archGenerated = false;
+  await vscode8.window.withProgress(
+    {
+      location: vscode8.ProgressLocation.Notification,
+      title: "ASCII Agent",
+      cancellable: true
+    },
+    async (progress, archToken) => {
+      archGenerated = await safeGenerateArchitecture(workspaceRoot, progress, archToken);
+    }
+  );
+  if (!archGenerated) {
+    vscode8.window.showWarningMessage(
+      'ASCII Agent: File tree created. Architecture diagram skipped \u2014 Copilot not available yet. Run "ASCII Agent: Generate Now" once Copilot is ready.'
+    );
+  }
+  await promptGitignoreUpdate(workspaceRoot);
+  vscode8.window.showInformationMessage("ASCII Agent: Initialization complete.");
+  log.info("Initialization complete.");
+}
+async function commandGenerateNow(workspaceRoot) {
+  log.info("Running: asciiAgent.generateNow");
+  await vscode8.window.withProgress(
+    {
+      location: vscode8.ProgressLocation.Notification,
+      title: "ASCII Agent",
+      cancellable: true
+    },
+    async (progress, token) => {
+      Promise.resolve().then(() => (init_watcher(), watcher_exports)).then(({ cancelPendingTimers: cancelPendingTimers2 }) => cancelPendingTimers2()).catch(() => void 0);
+      progress.report({ message: "Generating file tree..." });
+      setStatusBarGenerating(true);
+      try {
+        const { generateFileTree: generateFileTree2 } = await Promise.resolve().then(() => (init_tree_generator(), tree_generator_exports));
+        const { ensureDirectoryExists: ensureDirectoryExists2 } = await Promise.resolve().then(() => (init_utils(), utils_exports));
+        if (token.isCancellationRequested) {
+          return;
+        }
+        const outputDir = currentConfig.outputPaths.fileTree.split("/").slice(0, -1).join("/");
+        await ensureDirectoryExists2(vscode8.Uri.joinPath(workspaceRoot, outputDir || "docs"));
+        const treeStart = Date.now();
+        const treeContent = await generateFileTree2(workspaceRoot, currentConfig);
+        await writeOutputFile(workspaceRoot, currentConfig.outputPaths.fileTree, treeContent);
+        log.info(`File tree generated in ${Date.now() - treeStart}ms.`);
+        if (token.isCancellationRequested) {
+          return;
+        }
+        progress.report({ message: "Generating architecture diagram (AI)..." });
+        const { generateArchitectureDiagram: generateArchitectureDiagram2 } = await Promise.resolve().then(() => (init_architecture_agent(), architecture_agent_exports));
+        const { createLmClient: createLmClient2 } = await Promise.resolve().then(() => (init_lm_client(), lm_client_exports));
+        const lmClient = createLmClient2();
+        try {
+          if (!await lmClient.isAvailable()) {
+            vscode8.window.showWarningMessage(
+              "ASCII Agent: Copilot model not available \u2014 only file tree was regenerated."
+            );
+            log.warn("LM unavailable \u2014 skipping architecture generation.");
+            return;
+          }
+          const archStart = Date.now();
+          const archResult = await generateArchitectureDiagram2(currentConfig, workspaceRoot, lmClient, token);
+          if (token.isCancellationRequested) {
+            return;
+          }
+          const { saveSnapshot: saveSnapshot2 } = await Promise.resolve().then(() => (init_history(), history_exports));
+          await saveSnapshot2(workspaceRoot, archResult.diagram);
+          await pruneHistory(workspaceRoot);
+          await writeOutputFile(workspaceRoot, currentConfig.outputPaths.architecture, archResult.diagram);
+          await recordTokenUsage(extensionContext, archResult.inputTokensEstimate, archResult.outputTokensEstimate);
+          log.info(`Architecture diagram generated in ${Date.now() - archStart}ms.`);
+          vscode8.window.showInformationMessage("ASCII Agent: Diagrams updated.");
+        } finally {
+          lmClient.dispose();
+        }
+      } finally {
+        setStatusBarGenerating(false);
+      }
+    }
+  );
+}
+function commandToggleAutoWatch(context, workspaceRoot) {
+  if (watcherState === "active" /* Active */) {
+    stopWatcher();
+    vscode8.window.showInformationMessage("ASCII Agent: Auto-watch is now OFF.");
+    log.info("Auto-watch paused by user.");
+  } else {
+    startWatcher(context, workspaceRoot);
+    vscode8.window.showInformationMessage("ASCII Agent: Auto-watch is now ON.");
+    log.info("Auto-watch started by user.");
+  }
+}
+function commandShowTokenUsage(context) {
+  const session = getSessionTokenUsage(context);
+  const lifetime = getLifetimeTokenUsage(context);
+  const fmt = (n) => n.toLocaleString();
+  const sessionTotal = session.inputTokensEstimate + session.outputTokensEstimate;
+  const lifetimeTotal = lifetime.inputTokensEstimate + lifetime.outputTokensEstimate;
+  const sessionReqLabel = session.requestCount === 1 ? "1 request" : `${fmt(session.requestCount)} requests`;
+  const lifetimeReqLabel = lifetime.requestCount === 1 ? "1 request" : `${fmt(lifetime.requestCount)} requests`;
+  const quickPick = vscode8.window.createQuickPick();
+  quickPick.title = "ASCII Agent \u2014 Token Usage";
+  quickPick.placeholder = "";
+  quickPick.ignoreFocusOut = false;
+  quickPick.canSelectMany = false;
+  quickPick.items = [
+    { label: "Session (this window)", kind: vscode8.QuickPickItemKind.Separator },
+    {
+      label: `  ~${fmt(sessionTotal)} tokens   (${sessionReqLabel})  \u2014 ~${fmt(session.inputTokensEstimate)} in / ~${fmt(session.outputTokensEstimate)} out`,
+      alwaysShow: true
+    },
+    { label: "Lifetime (all time)", kind: vscode8.QuickPickItemKind.Separator },
+    {
+      label: `  ~${fmt(lifetimeTotal)} tokens   (${lifetimeReqLabel}) \u2014 ~${fmt(lifetime.inputTokensEstimate)} in / ~${fmt(lifetime.outputTokensEstimate)} out`,
+      alwaysShow: true
+    },
+    {
+      label: "Note: Estimates only \u2014 LM streaming API does not provide exact counts.",
+      kind: vscode8.QuickPickItemKind.Separator
+    }
+  ];
+  quickPick.onDidAccept(() => quickPick.hide());
+  quickPick.onDidHide(() => quickPick.dispose());
+  quickPick.show();
+}
+function startWatcher(context, workspaceRoot) {
+  Promise.resolve().then(() => (init_watcher(), watcher_exports)).then(({ startWatching: startWatching2 }) => {
+    watcherSessionDisposable = startWatching2(currentConfig, context, {
+      onTreeRegenNeeded: async () => {
+        const { generateFileTree: generateFileTree2 } = await Promise.resolve().then(() => (init_tree_generator(), tree_generator_exports));
+        await safeGenerateAndWriteFileTree(workspaceRoot, generateFileTree2);
+      },
+      onArchitectureRegenNeeded: async () => {
+        await safeGenerateArchitecture(workspaceRoot);
+      }
+    });
+    context.subscriptions.push(watcherSessionDisposable);
+    watcherState = "active" /* Active */;
+    updateStatusBar("active" /* Active */);
+  });
+}
+function stopWatcher() {
+  watcherSessionDisposable?.dispose();
+  watcherSessionDisposable = void 0;
+  watcherState = "paused" /* Paused */;
+  updateStatusBar("paused" /* Paused */);
+}
+function updateStatusBar(state) {
+  if (!statusBarItem) {
+    return;
+  }
+  switch (state) {
+    case "active" /* Active */:
+      statusBarItem.text = "$(eye) ASCII Agent";
+      statusBarItem.tooltip = "ASCII Agent: auto-watch active. Click to pause.";
+      break;
+    case "paused" /* Paused */:
+      statusBarItem.text = "$(eye-closed) ASCII Agent (paused)";
+      statusBarItem.tooltip = "ASCII Agent: auto-watch paused. Click to resume.";
+      break;
+    case "disabled" /* Disabled */:
+      statusBarItem.text = "$(eye) ASCII Agent";
+      statusBarItem.tooltip = "ASCII Agent: inactive.";
+      break;
+  }
+}
+function setStatusBarGenerating(generating) {
+  if (!statusBarItem) {
+    return;
+  }
+  if (generating) {
+    statusBarItem.text = "$(sync~spin) ASCII Agent: generating...";
+  } else {
+    updateStatusBar(watcherState);
+  }
+}
+async function writeOutputFile(workspaceRoot, relPath, content) {
+  const { ensureDirectoryExists: ensureDirectoryExists2 } = await Promise.resolve().then(() => (init_utils(), utils_exports));
+  const fileUri = vscode8.Uri.joinPath(workspaceRoot, relPath);
+  const parentRel = relPath.split("/").slice(0, -1).join("/");
+  if (parentRel) {
+    await ensureDirectoryExists2(vscode8.Uri.joinPath(workspaceRoot, parentRel));
+  }
+  await vscode8.workspace.fs.writeFile(fileUri, Buffer.from(content, "utf-8"));
+}
+async function safeGenerateAndWriteFileTree(workspaceRoot, generateFileTree2) {
+  try {
+    const content = await generateFileTree2(workspaceRoot, currentConfig);
+    await writeOutputFile(workspaceRoot, currentConfig.outputPaths.fileTree, content);
+    log.info("File tree written successfully.");
+  } catch (err) {
+    log.error(`Failed to generate file tree: ${String(err)}`);
+  }
+}
+async function safeGenerateArchitecture(workspaceRoot, progress, archToken) {
+  try {
+    const { generateArchitectureDiagram: generateArchitectureDiagram2 } = await Promise.resolve().then(() => (init_architecture_agent(), architecture_agent_exports));
+    const { createLmClient: createLmClient2 } = await Promise.resolve().then(() => (init_lm_client(), lm_client_exports));
+    const { saveSnapshot: saveSnapshot2 } = await Promise.resolve().then(() => (init_history(), history_exports));
+    const lmClient = createLmClient2();
+    try {
+      if (!await lmClient.isAvailable()) {
+        log.info("LM unavailable \u2014 skipping architecture generation.");
+        return false;
+      }
+      const genStart = Date.now();
+      progress?.report({ message: "Generating architecture diagram (AI)... 0s elapsed" });
+      const ticker = setInterval(() => {
+        const elapsed2 = Math.round((Date.now() - genStart) / 1e3);
+        progress?.report({ message: `Generating architecture diagram (AI)... ${elapsed2}s elapsed` });
+      }, 1e3);
+      let archResult;
+      try {
+        archResult = await generateArchitectureDiagram2(currentConfig, workspaceRoot, lmClient, archToken);
+      } finally {
+        clearInterval(ticker);
+      }
+      if (archToken?.isCancellationRequested || !archResult) {
+        return false;
+      }
+      await saveSnapshot2(workspaceRoot, archResult.diagram);
+      await pruneHistory(workspaceRoot);
+      await writeOutputFile(workspaceRoot, currentConfig.outputPaths.architecture, archResult.diagram);
+      await recordTokenUsage(extensionContext, archResult.inputTokensEstimate, archResult.outputTokensEstimate);
+      const elapsed = ((Date.now() - genStart) / 1e3).toFixed(1);
+      progress?.report({ message: `Architecture diagram complete (${elapsed}s)` });
+      log.info(`Architecture diagram written successfully in ${elapsed}s.`);
+      return true;
+    } finally {
+      lmClient.dispose();
+    }
+  } catch (err) {
+    log.error(`Failed to generate architecture diagram: ${String(err)}`);
+    return false;
+  }
+}
+async function pruneHistory(workspaceRoot) {
+  try {
+    const { pruneSnapshots: pruneSnapshots2 } = await Promise.resolve().then(() => (init_history(), history_exports));
+    await pruneSnapshots2(workspaceRoot, currentConfig.maxHistorySnapshots);
+  } catch (err) {
+    log.warn(`Snapshot pruning failed: ${String(err)}`);
+  }
+}
+async function detectExistingOutputFiles(workspaceRoot, config) {
+  const candidates = [config.outputPaths.fileTree, config.outputPaths.architecture];
+  const existing = [];
+  for (const relPath of candidates) {
+    try {
+      await vscode8.workspace.fs.stat(vscode8.Uri.joinPath(workspaceRoot, relPath));
+      existing.push(relPath);
+    } catch {
+    }
+  }
+  return existing;
+}
+async function maybeCreateDefaultAsciirc(workspaceRoot) {
+  const configUri = vscode8.Uri.joinPath(workspaceRoot, ".asciirc.json");
+  try {
+    await vscode8.workspace.fs.stat(configUri);
+  } catch {
+    const { getDefaultConfig: getDefaultConfig2 } = await Promise.resolve().then(() => (init_config(), config_exports));
+    const defaults = getDefaultConfig2();
+    const content = JSON.stringify(defaults, null, 2);
+    await vscode8.workspace.fs.writeFile(configUri, Buffer.from(content, "utf-8"));
+    log.info("Created default .asciirc.json.");
+  }
+}
+async function promptGitignoreUpdate(workspaceRoot) {
+  const gitignoreUri = vscode8.Uri.joinPath(workspaceRoot, ".gitignore");
+  let content;
+  try {
+    const bytes = await vscode8.workspace.fs.readFile(gitignoreUri);
+    content = Buffer.from(bytes).toString("utf-8");
+  } catch {
+    return;
+  }
+  if (content.includes(".ascii_history")) {
+    return;
+  }
+  const choice = await vscode8.window.showInformationMessage(
+    "ASCII Agent: Add .ascii_history/ to .gitignore?",
+    "Yes",
+    "No"
+  );
+  if (choice === "Yes") {
+    const appended = content.trimEnd() + "\n\n# ASCII Agent history snapshots\n.ascii_history/\n";
+    await vscode8.workspace.fs.writeFile(gitignoreUri, Buffer.from(appended, "utf-8"));
+    log.info("Added .ascii_history/ to .gitignore.");
+  }
+}
+var WELCOME_SHOWN_KEY = "asciiAgent.welcomeShown";
+async function maybeShowWelcomePrompt(context, workspaceRoot) {
+  if (context.globalState.get(WELCOME_SHOWN_KEY)) {
+    return;
+  }
+  await context.globalState.update(WELCOME_SHOWN_KEY, true);
+  const INIT_WATCH = "Initialize + Auto-Watch";
+  const GEN_ONCE = "Generate Once (No Watch)";
+  const choice = await vscode8.window.showInformationMessage(
+    "Welcome to ASCII Agent! Generate an ASCII file-tree and a Copilot-powered architecture diagram for this workspace. Choose how you'd like to start:",
+    { modal: true },
+    INIT_WATCH,
+    GEN_ONCE
+  );
+  if (choice === INIT_WATCH) {
+    log.info("Welcome prompt: user chose Initialize + Auto-Watch.");
+    await commandInitialize(workspaceRoot);
+    if (watcherState !== "active" /* Active */) {
+      startWatcher(context, workspaceRoot);
+    }
+  } else if (choice === GEN_ONCE) {
+    log.info("Welcome prompt: user chose Generate Once.");
+    const { generateFileTree: generateFileTree2 } = await Promise.resolve().then(() => (init_tree_generator(), tree_generator_exports));
+    const { ensureDirectoryExists: ensureDirectoryExists2 } = await Promise.resolve().then(() => (init_utils(), utils_exports));
+    const outputDir = currentConfig.outputPaths.fileTree.split("/").slice(0, -1).join("/");
+    await ensureDirectoryExists2(vscode8.Uri.joinPath(workspaceRoot, outputDir || "docs"));
+    await safeGenerateAndWriteFileTree(workspaceRoot, generateFileTree2);
+    let genOnceArch = false;
+    await vscode8.window.withProgress(
+      {
+        location: vscode8.ProgressLocation.Notification,
+        title: "ASCII Agent",
+        cancellable: true
+      },
+      async (progress, archToken) => {
+        genOnceArch = await safeGenerateArchitecture(workspaceRoot, progress, archToken);
+      }
+    );
+    if (genOnceArch) {
+      vscode8.window.showInformationMessage(
+        'ASCII Agent: Diagrams generated. Run "ASCII Agent: Toggle Auto-Watch" any time to enable automatic updates.'
+      );
+    } else {
+      vscode8.window.showWarningMessage(
+        'ASCII Agent: File tree created. Architecture diagram skipped \u2014 Copilot not available yet. Run "ASCII Agent: Generate Now" once Copilot is ready.'
+      );
+    }
+  } else {
+    log.info("Welcome prompt: dismissed by user.");
+  }
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  activate,
+  deactivate,
+  resolveWorkspaceRoot
+});
+//# sourceMappingURL=extension.js.map

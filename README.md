@@ -84,6 +84,21 @@ The `$(eye) ASCII Agent` item in the status bar shows the watcher state. Click i
 
 All diagnostic output is written to the **ASCII Agent** output channel (`View → Output → ASCII Agent`).
 
+## Token Usage
+
+After every architecture diagram generation, ASCII Agent logs a token usage estimate to the **ASCII Agent** output channel. Open it via `View → Output → ASCII Agent` to see per-request and running totals, for example:
+
+```
+Token usage — request: ~1240 in / ~380 out | session total: ~1620 tokens (1 requests) | lifetime: ~4890 tokens (3 requests)
+```
+
+To see a formatted summary at any time, run **ASCII Agent: Show Token Usage** from the Command Palette (`Cmd/Ctrl+Shift+P`). A Quick Pick panel opens showing:
+
+- **Session (this window)** — tokens used since the current VS Code window opened
+- **Lifetime (all time)** — cumulative total across all sessions
+
+> **Note:** Estimates use a ~4 chars/token heuristic because the VS Code LM streaming API does not expose exact token counts. Figures are intended for rough cost awareness, not billing accuracy.
+
 ## Portability
 
 ASCII Agent is fully project-agnostic. It contains zero hardcoded project names or file paths. All paths are resolved from the active workspace root and driven by `.asciirc.json`. It works in any VS Code workspace with Copilot enabled.
