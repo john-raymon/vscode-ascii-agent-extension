@@ -1,6 +1,6 @@
 # ASCII Agent — VS Code Extension
 
-> Silently maintains ASCII file-tree and architecture diagrams for your workspace.
+> Auto-generates and keeps an ASCII file-tree and a Copilot-powered architecture data-flow diagram up to date as your codebase changes. Requires GitHub Copilot Chat.
 
 ## What It Does
 

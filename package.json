@@ -1,7 +1,7 @@
 {
   "name": "vscode-ascii-agent",
   "displayName": "ASCII Agent",
-  "description": "Silently maintains ASCII file-tree and architecture diagrams for your workspace.",
+  "description": "Auto-generates and keeps an ASCII file-tree and a Copilot-powered architecture data-flow diagram up to date as your codebase changes. Requires GitHub Copilot Chat.",
   "version": "0.0.1",
   "publisher": "johnraymonmendez",
   "repository": {
