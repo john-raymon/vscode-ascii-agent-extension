@@ -14,6 +14,9 @@
     "workspaceContains:**/.asciirc.json",
     "onStartupFinished"
   ],
+  "extensionDependencies": [
+    "github.copilot-chat"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [

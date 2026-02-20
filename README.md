@@ -20,7 +20,7 @@ ASCII Agent watches your workspace and autonomously keeps two strictly separated
 
 1. Open any workspace in VS Code.
 2. Run **ASCII Agent: Initialize** from the Command Palette (`Cmd/Ctrl+Shift+P`).
-3. ASCII Agent creates `docs/file_tree.txt` and `docs/architecture.txt` immediately, then watches for changes.
+3. ASCII Agent creates `docs/file_tree.md` and `docs/architecture.md` immediately, then watches for changes.
 
 ## Commands
 
@@ -44,8 +44,8 @@ Place a `.asciirc.json` file in your workspace root to customize behavior. All f
 
   // Output file locations (relative to workspace root)
   "outputPaths": {
-    "fileTree": "docs/file_tree.txt",
-    "architecture": "docs/architecture.txt",
+    "fileTree": "docs/file_tree.md",
+    "architecture": "docs/architecture.md",
   },
 
   // Milliseconds to wait after last file event before regenerating (min 500)
