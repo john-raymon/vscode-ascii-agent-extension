@@ -6,7 +6,7 @@
       "type": "shell",
       "command": "node esbuild.mjs",
       "options": {
-        "cwd": "${workspaceFolder}/tools/vscode-ascii-agent"
+        "cwd": "${workspaceFolder}"
       },
       "group": "build",
       "problemMatcher": ["$tsc"]
@@ -16,7 +16,7 @@
       "type": "shell",
       "command": "node esbuild.mjs --watch",
       "options": {
-        "cwd": "${workspaceFolder}/tools/vscode-ascii-agent"
+        "cwd": "${workspaceFolder}"
       },
       "isBackground": true,
       "group": "build",

@@ -88,13 +88,50 @@ All diagnostic output is written to the **ASCII Agent** output channel (`View �
 
 ASCII Agent is fully project-agnostic. It contains zero hardcoded project names or file paths. All paths are resolved from the active workspace root and driven by `.asciirc.json`. It works in any VS Code workspace with Copilot enabled.
 
-## Development
+## Development (running locally without installing)
+
+This is for testing the extension while actively working on it.
+
+**One-time setup:**
 
 ```bash
 cd tools/vscode-ascii-agent
 npm install
-node esbuild.mjs          # Build once
-node esbuild.mjs --watch  # Watch mode
 ```
 
-Press `F5` in VS Code to launch the Extension Host debugger (uses `.vscode/launch.json`).
+**Steps to run:**
+
+1. In VS Code, open `tools/vscode-ascii-agent/` as your workspace root (File → Open Folder → select that folder). This is required so VS Code can find `.vscode/launch.json`.
+2. Press `F5` (or **Run → Start Debugging**) and select **Run ASCII Agent Extension**.
+3. VS Code builds the extension automatically, then opens a **second VS Code window** called the "Extension Development Host." Your extension is live inside that window.
+4. In the Extension Development Host window, open your target project folder (File → Open Folder). For example, open `word-for-word-game/`.
+5. Press `Cmd+Shift+P` and run **ASCII Agent: Initialize** to test.
+
+**Rebuilding after code changes:**
+
+- Stop the debugger, press `F5` again to rebuild and relaunch, OR
+- Run `node esbuild.mjs --watch` in a terminal for continuous rebuilds, then use **Developer: Reload Window** in the Extension Development Host to pick up changes without restarting the debugger.
+
+---
+
+## Installing as a Packaged Extension
+
+Once the extension is ready for distribution, you can package and install it locally without needing a second window or debug mode.
+
+**Package it:**
+
+```bash
+cd tools/vscode-ascii-agent
+npm install -g @vscode/vsce   # install packaging tool (one-time)
+vsce package                   # produces ascii-agent-x.x.x.vsix
+```
+
+**Install it:**
+
+```bash
+code --install-extension ascii-agent-x.x.x.vsix
+```
+
+Or in VS Code: open the Extensions panel → `...` menu → **Install from VSIX** → select the `.vsix` file.
+
+After installing, the extension activates automatically in any workspace. No second window needed — it behaves like any other installed VS Code extension.
