@@ -37,8 +37,8 @@ export function getDefaultConfig(): AsciiAgentConfig {
     ],
     architectureWatchPatterns: ["src/**/*.{ts,tsx,js,jsx}", "lib/**/*.{ts,tsx,js,jsx}", "api/**/*.ts"],
     outputPaths: {
-      fileTree: "docs/file_tree.txt",
-      architecture: "docs/architecture.txt",
+      fileTree: "docs/file_tree.md",
+      architecture: "docs/architecture.md",
     },
     debounceMs: 2000,
     maxHistorySnapshots: 50,

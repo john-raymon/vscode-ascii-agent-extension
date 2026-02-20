@@ -119,12 +119,14 @@ export async function generateArchitectureDiagram(
 
   const rawResponse = await lmClient.sendPrompt(messages, token);
 
-  // 8. Post-process: strip markdown fences and any preamble text.
+  // 8. Post-process: strip markdown fences and any preamble text from LM response.
   const cleaned = postProcessResponse(rawResponse);
 
   log.info(`Architecture diagram received (${cleaned.length} chars).`);
 
-  return cleaned;
+  // 9. Wrap in a markdown code block so the .md file renders correctly in
+  //    VS Code preview, GitHub, and is well-understood by AI agents.
+  return `# Architecture Diagram\n\n\`\`\`\n${cleaned.trimEnd()}\n\`\`\`\n`;
 }
 
 // ---------------------------------------------------------------------------
@@ -330,10 +332,33 @@ async function readPreviousArchitecture(config: AsciiAgentConfig, workspaceRoot:
   try {
     const archUri = vscode.Uri.joinPath(workspaceRoot, config.outputPaths.architecture);
     const bytes = await vscode.workspace.fs.readFile(archUri);
-    return Buffer.from(bytes).toString("utf-8");
+    const raw = Buffer.from(bytes).toString("utf-8");
+    // The file is stored as a markdown document with a heading and code fence.
+    // Strip the wrapper before sending raw ASCII to the LM — the LM should
+    // receive only the diagram content, not the markdown scaffolding.
+    return stripMarkdownCodeBlock(raw);
   } catch {
     return "";
   }
+}
+
+/**
+ * Strip a markdown heading and surrounding code fence from a diagram .md file,
+ * returning the raw ASCII content within.
+ *
+ * Handles files in the form:
+ *   # <any heading>\n\n```\n<diagram>\n```\n
+ *
+ * If the file does not match that structure (e.g. legacy .txt content or empty),
+ * the original string is returned unchanged so the LM still gets usable context.
+ *
+ * @param content - Full file content of a diagram markdown file.
+ * @returns Raw ASCII diagram string, or the original content if no fence found.
+ */
+function stripMarkdownCodeBlock(content: string): string {
+  // Match optional heading, optional blank line, opening fence, content, closing fence.
+  const match = content.match(/^(?:#[^\n]*\n+)?```[^\n]*\n([\s\S]*?)```\s*$/m);
+  return match ? match[1].trimEnd() : content;
 }
 
 /**

@@ -146,9 +146,13 @@ export async function generateFileTree(workspaceRoot: vscode.Uri, config: AsciiA
   const rootName = workspaceRoot.path.split("/").pop() ?? workspaceRoot.fsPath.split("/").pop() ?? "workspace";
   const bodyLines = await buildLines(workspaceRoot, "", "");
 
-  // Compose final string with root node at top.
+  // Compose raw ASCII tree with root node at top.
   const allLines = [rootName + "/", ...bodyLines];
-  return allLines.join("\n") + "\n";
+  const rawTree = allLines.join("\n");
+
+  // Wrap in a markdown code block so the .md file renders correctly in
+  // VS Code preview, GitHub, and is well-understood by AI agents.
+  return `# File Tree\n\n\`\`\`\n${rawTree}\n\`\`\`\n`;
 }
 
 // ---------------------------------------------------------------------------
