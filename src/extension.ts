@@ -33,6 +33,31 @@ let statusBarItem: vscode.StatusBarItem;
 let watcherSessionDisposable: vscode.Disposable | undefined;
 
 // ---------------------------------------------------------------------------
+// Workspace root helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve the active workspace root at call time.
+ *
+ * Always read `workspaceFolders` fresh rather than relying on a closure captured
+ * at activation, so commands target the correct folder regardless of which window
+ * is focused or whether the workspace changed after the extension activated.
+ *
+ * @returns The URI of the first workspace folder, or `undefined` if none is open.
+ */
+function resolveWorkspaceRoot(): vscode.Uri | undefined {
+  return vscode.workspace.workspaceFolders?.[0]?.uri;
+}
+
+/**
+ * Show a warning when a command is invoked with no open workspace folder.
+ */
+function warnNoWorkspace(): void {
+  vscode.window.showWarningMessage("ASCII Agent: No workspace folder is open.");
+  log.warn("Command invoked with no open workspace folder.");
+}
+
+// ---------------------------------------------------------------------------
 // Activate
 // ---------------------------------------------------------------------------
 
@@ -86,15 +111,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(statusBarItem);
 
   // --- Register commands ---
+  // Commands resolve the active workspace root at invocation time (not from the
+  // activation-time closure) so they always target the correct folder even when
+  // multiple windows are open or the workspace changes after activation.
   context.subscriptions.push(
-    vscode.commands.registerCommand("asciiAgent.initialize", () => commandInitialize(workspaceRoot)),
-    vscode.commands.registerCommand("asciiAgent.generateNow", () => commandGenerateNow(workspaceRoot)),
-    vscode.commands.registerCommand("asciiAgent.toggleAutoWatch", () => commandToggleAutoWatch(context, workspaceRoot)),
+    vscode.commands.registerCommand("asciiAgent.initialize", () => {
+      const root = resolveWorkspaceRoot();
+      return root ? commandInitialize(root) : warnNoWorkspace();
+    }),
+    vscode.commands.registerCommand("asciiAgent.generateNow", () => {
+      const root = resolveWorkspaceRoot();
+      return root ? commandGenerateNow(root) : warnNoWorkspace();
+    }),
+    vscode.commands.registerCommand("asciiAgent.toggleAutoWatch", () => {
+      const root = resolveWorkspaceRoot();
+      return root ? commandToggleAutoWatch(context, root) : warnNoWorkspace();
+    }),
   );
 
   // --- Auto-start watcher if configured ---
   if (currentConfig.autoWatchEnabled) {
-    startWatcher(context, workspaceRoot);
+    startWatcher(context, workspaceRoot); // Use activation-time root for the watcher — correct for this window.
   }
 
   // --- Activation success message (fades after 3 seconds) ---
@@ -165,7 +202,12 @@ async function commandInitialize(workspaceRoot: vscode.Uri): Promise<void> {
   await safeGenerateAndWriteFileTree(workspaceRoot, generateFileTree);
 
   // 5. Generate and write architecture diagram.
-  await safeGenerateArchitecture(workspaceRoot);
+  const archGenerated = await safeGenerateArchitecture(workspaceRoot);
+  if (!archGenerated) {
+    vscode.window.showWarningMessage(
+      'ASCII Agent: File tree created. Architecture diagram skipped — Copilot not available yet. Run "ASCII Agent: Generate Now" once Copilot is ready.',
+    );
+  }
 
   // 6. Prompt about .gitignore (PRD §7.7).
   await promptGitignoreUpdate(workspaceRoot);
@@ -418,7 +460,16 @@ async function safeGenerateAndWriteFileTree(
  *
  * @param workspaceRoot - URI of workspace root.
  */
-async function safeGenerateArchitecture(workspaceRoot: vscode.Uri): Promise<void> {
+/**
+ * Safely generate and write the architecture diagram.
+ * Returns `true` if the diagram was generated and written, `false` if the LM
+ * was unavailable or generation failed. Callers can use the return value to
+ * decide whether to surface a follow-up prompt to the user.
+ *
+ * @param workspaceRoot - URI of workspace root.
+ * @returns Whether the diagram was successfully generated.
+ */
+async function safeGenerateArchitecture(workspaceRoot: vscode.Uri): Promise<boolean> {
   try {
     const { generateArchitectureDiagram } = await import("./architecture-agent");
     const { createLmClient } = await import("./lm-client");
@@ -428,7 +479,7 @@ async function safeGenerateArchitecture(workspaceRoot: vscode.Uri): Promise<void
     try {
       if (!(await lmClient.isAvailable())) {
         log.info("LM unavailable — skipping architecture generation.");
-        return;
+        return false;
       }
 
       const archContent = await generateArchitectureDiagram(currentConfig, workspaceRoot, lmClient);
@@ -437,11 +488,13 @@ async function safeGenerateArchitecture(workspaceRoot: vscode.Uri): Promise<void
       await pruneHistory(workspaceRoot);
       await writeOutputFile(workspaceRoot, currentConfig.outputPaths.architecture, archContent);
       log.info("Architecture diagram written successfully.");
+      return true;
     } finally {
       lmClient.dispose();
     }
   } catch (err) {
     log.error(`Failed to generate architecture diagram: ${String(err)}`);
+    return false;
   }
 }
 
