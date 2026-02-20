@@ -146,13 +146,28 @@ async function commandInitialize(workspaceRoot: vscode.Uri): Promise<void> {
   // Reload config after potential creation.
   currentConfig = await loadConfig(workspaceRoot);
 
-  // 3. Generate and write file tree.
+  // 3. Check for existing output files and confirm overwrite if any exist.
+  const existingFiles = await detectExistingOutputFiles(workspaceRoot, currentConfig);
+  if (existingFiles.length > 0) {
+    const fileList = existingFiles.map((f) => `• ${f}`).join("\n");
+    const choice = await vscode.window.showWarningMessage(
+      `ASCII Agent: The following files already exist:\n\n${fileList}\n\nOverwrite them?`,
+      { modal: true },
+      "Overwrite",
+    );
+    if (choice !== "Overwrite") {
+      log.info("Initialize cancelled by user — existing files would be overwritten.");
+      return;
+    }
+  }
+
+  // 4. Generate and write file tree.
   await safeGenerateAndWriteFileTree(workspaceRoot, generateFileTree);
 
-  // 4. Generate and write architecture diagram.
+  // 5. Generate and write architecture diagram.
   await safeGenerateArchitecture(workspaceRoot);
 
-  // 5. Prompt about .gitignore (PRD §7.7).
+  // 6. Prompt about .gitignore (PRD §7.7).
   await promptGitignoreUpdate(workspaceRoot);
 
   vscode.window.showInformationMessage("ASCII Agent: Initialization complete.");
@@ -442,6 +457,30 @@ async function pruneHistory(workspaceRoot: vscode.Uri): Promise<void> {
   } catch (err) {
     log.warn(`Snapshot pruning failed: ${String(err)}`);
   }
+}
+
+/**
+ * Check which configured output files already exist in the workspace.
+ * Returns an array of workspace-relative paths for files that exist.
+ *
+ * @param workspaceRoot - URI of workspace root.
+ * @param config        - Current extension config (used to resolve configured output paths).
+ */
+async function detectExistingOutputFiles(
+  workspaceRoot: vscode.Uri,
+  config: import("./types").AsciiAgentConfig,
+): Promise<string[]> {
+  const candidates = [config.outputPaths.fileTree, config.outputPaths.architecture];
+  const existing: string[] = [];
+  for (const relPath of candidates) {
+    try {
+      await vscode.workspace.fs.stat(vscode.Uri.joinPath(workspaceRoot, relPath));
+      existing.push(relPath);
+    } catch {
+      // File does not exist — no action needed.
+    }
+  }
+  return existing;
 }
 
 /**
