@@ -231,7 +231,7 @@ async function commandGenerateNow(workspaceRoot: vscode.Uri): Promise<void> {
         const lmClient = createLmClient();
 
         try {
-          if (!lmClient.isAvailable()) {
+          if (!(await lmClient.isAvailable())) {
             vscode.window.showWarningMessage(
               "ASCII Agent: Copilot model not available — only file tree was regenerated.",
             );
@@ -426,7 +426,7 @@ async function safeGenerateArchitecture(workspaceRoot: vscode.Uri): Promise<void
 
     const lmClient = createLmClient();
     try {
-      if (!lmClient.isAvailable()) {
+      if (!(await lmClient.isAvailable())) {
         log.info("LM unavailable — skipping architecture generation.");
         return;
       }

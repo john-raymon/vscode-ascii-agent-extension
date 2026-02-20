@@ -81,12 +81,14 @@ export function createLmClient(): LmClient {
   }
 
   // Eagerly select a model when the client is created.
-  selectModel();
+  // Store the promise so isAvailable() can await it instead of checking
+  // a potentially-still-undefined cachedModel synchronously.
+  let initialSelectionPromise: Promise<vscode.LanguageModelChat | undefined> = selectModel();
 
   // Re-select when available models change (e.g. user signs in/out of Copilot).
   modelChangeDisposable = vscode.lm.onDidChangeChatModels(() => {
     log.info("LM models changed — re-selecting.");
-    selectModel();
+    initialSelectionPromise = selectModel();
   });
 
   // -------------------------------------------------------------------------
@@ -252,8 +254,16 @@ export function createLmClient(): LmClient {
 
   /**
    * Returns `true` if a Copilot model is currently available and no cooldown is active.
+   *
+   * Awaits the initial model selection promise to avoid a race condition where
+   * `createLmClient()` is called and `isAvailable()` is checked before the
+   * async `selectModel()` call has resolved.
    */
-  function isAvailable(): boolean {
+  async function isAvailable(): Promise<boolean> {
+    // If no model is cached yet, wait for the initial selection to complete.
+    if (cachedModel === undefined) {
+      await initialSelectionPromise;
+    }
     return cachedModel !== undefined && !quotaCooldown;
   }
 

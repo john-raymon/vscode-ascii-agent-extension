@@ -134,7 +134,7 @@ export interface LmClient {
   cancelAll(): void;
 
   /** Returns `true` if a Copilot model is currently available. */
-  isAvailable(): boolean;
+  isAvailable(): Promise<boolean>;
 
   /** Release all resources held by this client. */
   dispose(): void;
