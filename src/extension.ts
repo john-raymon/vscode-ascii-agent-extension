@@ -43,9 +43,11 @@ let watcherSessionDisposable: vscode.Disposable | undefined;
  * at activation, so commands target the correct folder regardless of which window
  * is focused or whether the workspace changed after the extension activated.
  *
+ * Exported for unit testing.
+ *
  * @returns The URI of the first workspace folder, or `undefined` if none is open.
  */
-function resolveWorkspaceRoot(): vscode.Uri | undefined {
+export function resolveWorkspaceRoot(): vscode.Uri | undefined {
   return vscode.workspace.workspaceFolders?.[0]?.uri;
 }
 

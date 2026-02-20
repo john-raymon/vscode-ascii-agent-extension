@@ -43,6 +43,9 @@
     "compile": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "package:vsix": "vsce package",
+    "release:patch": "npm version patch && npm run package:vsix",
+    "release:minor": "npm version minor && npm run package:vsix",
+    "release:major": "npm version major && npm run package:vsix",
     "lint": "eslint src/",
     "test": "vscode-test"
   },
