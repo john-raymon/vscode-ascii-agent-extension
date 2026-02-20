@@ -92,6 +92,16 @@ node esbuild.mjs && npx tsc --noEmit
 
 Do not ship a change that causes either command to fail.
 
+## Packaging and publishing
+
+To produce a `.vsix` for Marketplace upload or local install:
+
+```bash
+npm run package:vsix
+```
+
+This runs `vsce package` via the `@vscode/vsce` dev dependency — no global install required. Upload the resulting `vscode-ascii-agent-x.x.x.vsix` at [marketplace.visualstudio.com/manage](https://marketplace.visualstudio.com/manage) under the `johnraymonmendez` publisher.
+
 ---
 
 ## Output file format

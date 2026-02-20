@@ -3,7 +3,11 @@
   "displayName": "ASCII Agent",
   "description": "Silently maintains ASCII file-tree and architecture diagrams for your workspace.",
   "version": "0.0.1",
-  "publisher": "word-for-word",
+  "publisher": "johnraymonmendez",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/john-raymon/vscode-ascii-agent-extension"
+  },
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -38,16 +42,18 @@
     "vscode:prepublish": "node esbuild.mjs --production",
     "compile": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
+    "package:vsix": "vsce package",
     "lint": "eslint src/",
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.93.0",
-    "@types/node": "^20.0.0",
     "@types/mocha": "^10.0.0",
-    "esbuild": "^0.24.0",
-    "typescript": "^5.5.0",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.93.0",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.0"
+    "@vscode/test-electron": "^2.4.0",
+    "@vscode/vsce": "^3.7.1",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.5.0"
   }
 }

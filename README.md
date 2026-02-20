@@ -121,15 +121,13 @@ Once the extension is ready for distribution, you can package and install it loc
 **Package it:**
 
 ```bash
-cd tools/vscode-ascii-agent
-npm install -g @vscode/vsce   # install packaging tool (one-time)
-vsce package                   # produces ascii-agent-x.x.x.vsix
+npm run package:vsix   # produces vscode-ascii-agent-x.x.x.vsix
 ```
 
 **Install it:**
 
 ```bash
-code --install-extension ascii-agent-x.x.x.vsix
+code --install-extension vscode-ascii-agent-x.x.x.vsix
 ```
 
 Or in VS Code: open the Extensions panel → `...` menu → **Install from VSIX** → select the `.vsix` file.
